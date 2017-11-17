@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>scaling demo</title>
+</head>
+<body>
+
+<div id="container">
+  <video id='vid' muted loop autoplay src="avsync_60fps_60s.mp4"></video>
+  <div id="meta">Lorem Ipsum</div>
+</div>
+
+<style>
+html {
+  background-color: #fff;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-size: 16px;
+}
+
+#container {
+  position: absolute;
+  width: 1280px;
+  height: 720px;
+
+  -o-transform-origin: 0 0;
+  -webkit-transform-origin: 0 0;
+  transform-origin: 0 0;
+}
+
+#vid {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  background-color: #0f0;
+
+  -o-transform-origin: 0 0;
+  -webkit-transform-origin: 0 0;
+  transform-origin: 0 0;
+}
+
+#vid.shrink {
+  -o-animation: shrink 2s 1 forwards;
+  -webkit-animation: shrink 2s 1 forwards;
+  animation: shrink 2s 1 forwards;
+}
+
+@-o-keyframes shrink {
+  from {
+    -o-transform: scale(1)
+  }
+  to {
+    -o-transform: scale(0.2375) translate(1650.5px, 1650.5px);
+  }
+}
+
+@-webkit-keyframes shrink {
+  from {
+    -wekbit-transform: scale(1);
+  }
+  to {
+    -wekbit-transform: scale(0.2375) translate(1650.5px, 1650.5px);
+  }
+}
+
+@keyframes shrink {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.2375) translate(1650.5px, 1650.5px);
+  }
+}
+
+#vid.grow {
+  -o-animation: grow 2s 1 forwards;
+  -webkit-animation: grow 2s 1 forwards;
+  animation: grow 2s 1 forwards;
+}
+
+@-o-keyframes grow {
+  from {
+    -o-transform: scale(0.2375) translate(1650.5px, 1650.5px);
+  }
+  to {
+    -o-transform: scale(1)
+  }
+}
+
+@-webkit-keyframes grow {
+  from {
+    -wekbit-transform: scale(0.2375) translate(1650.5px, 1650.5px);
+  }
+  to {
+    -wekbit-transform: scale(1);
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scale(0.2375) translate(1650.5px, 1650.5px);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+#meta {
+  position: absolute;
+  width: 17em;
+  height: 8.7em;
+  left: 24.5em;
+  top: 24.5em;
+  border: 0.5em solid #000;
+  z-index: 2;
+  color: #fff;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+  padding: 0.5em;
+}
+</style>
+
+<script>
+var scale = document.documentElement.offsetHeight / 720;
+var style = [
+  '-o-transform: scale(' + scale + ');',
+  '-webkit-transform: scale(' + scale + ');',
+  'transform: scale(' + scale + ');'
+];
+document.getElementById('container').style.cssText = style.join('');
+
+var count = 0;
+var vid = document.getElementById('vid');
+vid.classList.add('shrink');
+vid.addEventListener('animationend', (e) => {
+  if (++count % 2 == 1) {
+    vid.style.zIndex = '1';
+    setTimeout(() => {
+      vid.classList.remove('shrink')
+      vid.classList.add('grow');
+      vid.style.zIndex = '10';
+    }, 1000);
+  } else {
+    vid.classList.remove('grow')
+    vid.classList.add('shrink');
+  }
+}, false);
+</script>
+
+</body>
+</html>
