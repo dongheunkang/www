@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>video move demo</title>
+<style>
+html {
+  background-color: #fff;
+  margin: 0px;
+  padding: 0px;
+  height: 100%;
+  font-size: 16px;
+}
+
+#container {
+  left: 0px;
+  top: 0px;
+  position: absolute;
+  width: 640px;
+  height: 360px;
+}
+
+#control {
+  position: absolute;
+}
+
+#vid {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #0f0;
+  transform: scale(2, 2);
+}
+</style>
+<script>
+var distance = 10;
+var t = 0;
+var l = 0;
+
+function reset() {
+  t = 0;
+  l = 0;
+  var box = document.getElementById('container');
+  box.style.top = "0px";
+  box.style.left = "0px";
+}
+
+function up() {
+  t -= distance;
+  var box = document.getElementById('container');
+  box.style.top = t +"px";
+  console.log("up : " + t + "px");
+}
+
+function down() {
+  t += distance;
+  var box = document.getElementById('container');
+  box.style.top = t +"px";
+  console.log("down : " + t + "px");
+}
+
+function left() {
+  l -= distance;
+  var box = document.getElementById('container');
+  box.style.left = l +"px";
+  console.log("left : " + l + "px");
+}
+
+function right() {
+  l += distance;
+  var box = document.getElementById('container');
+  box.style.left = l +"px";
+  console.log("right : " + l + "px");
+}
+
+var i = 0;
+var srcs = [
+"avsync_60fps_60s.mp4",
+"oceans-clip.mp4",
+"movie_300.mp4",
+"portrait.mp4",
+"square.mp4",
+"Small_Potatoes_Episode_2_b010pyk0.mp4"
+];
+
+function changeSrc() {
+  i++;
+  pos = i % srcs.length;
+  document.getElementById('vid').src = "./video/" + srcs[pos];
+}
+</script>
+</head>
+<body>
+<div id="container">
+  <video id='vid' muted loop autoplay src="./video/avsync_60fps_60s.mp4"></video>
+</div>
+<script>
+'use strict';
+document.addEventListener('keydown', (event) => {
+  const keyName = event.key;
+  if (keyName == "ArrowLeft")
+    left();
+  else if (keyName == "ArrowRight")
+    right();
+  else if (keyName == "ArrowUp")
+    up();
+  else if (keyName == "ArrowDown")
+    down();
+  else if (keyName == "Enter")
+    changeSrc();
+});
+</script>
+</body>
+</html>
