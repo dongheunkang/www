@@ -124,10 +124,10 @@
         function next() {
         	count++;
         	log('Succeed:' + count);
-        	if (session) {
-        		session.close();
-        		log('session closed:' + count);
-        	}
+        	//if (session) {
+        	//	session.close();
+        	//	log('session closed:' + count);
+        	//}
         
         	if (count < LIMIT) {
         		createKeys();
