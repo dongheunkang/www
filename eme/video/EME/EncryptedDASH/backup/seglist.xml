@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seglist xmlns="http://www.hbbtv.org/2012/dash-testing">
+  <file ref="video/Vseg_init.mp4">
+    <size>975</size>
+    <start>0</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_1.m4s">
+    <size>362057</size>
+    <start>975</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_2.m4s">
+    <size>402132</size>
+    <start>363032</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_3.m4s">
+    <size>396499</size>
+    <start>765164</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_4.m4s">
+    <size>391152</size>
+    <start>1161663</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_5.m4s">
+    <size>397729</size>
+    <start>1552815</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_6.m4s">
+    <size>399100</size>
+    <start>1950544</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_7.m4s">
+    <size>404904</size>
+    <start>2349644</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_8.m4s">
+    <size>392947</size>
+    <start>2754548</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_9.m4s">
+    <size>396419</size>
+    <start>3147495</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_10.m4s">
+    <size>397241</size>
+    <start>3543914</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_11.m4s">
+    <size>397111</size>
+    <start>3941155</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_12.m4s">
+    <size>399398</size>
+    <start>4338266</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_13.m4s">
+    <size>395486</size>
+    <start>4737664</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_14.m4s">
+    <size>390794</size>
+    <start>5133150</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_15.m4s">
+    <size>396662</size>
+    <start>5523944</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_16.m4s">
+    <size>393458</size>
+    <start>5920606</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_17.m4s">
+    <size>394562</size>
+    <start>6314064</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_18.m4s">
+    <size>391489</size>
+    <start>6708626</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_19.m4s">
+    <size>399113</size>
+    <start>7100115</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_20.m4s">
+    <size>391113</size>
+    <start>7499228</start>
+    <video>media_video.fmp4</video>
+  </file>
+  <file ref="video/Vseg_21.m4s">
+    <size>353359</size>
+    <start>7890341</start>
+    <video>media_video.fmp4</video>
+  </file>
+</seglist>

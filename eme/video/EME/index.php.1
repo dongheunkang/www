@@ -1,0 +1,65 @@
+<?php
+$aURL = explode('/', $_GET['url']);
+$sURL = "{$aURL[2]}/$aURL[3]";
+
+$aSegList = parseSegList($aURL[0] . '/seglist.xml');
+
+if (key_exists($sURL, $aSegList)) {
+    $aSegment = $aSegList[$sURL];
+
+    $fp = fopen("$aURL[0]/{$aSegment['video']}", 'r');
+    my_fseek($fp, floatval($aSegment['start']));
+    $sContentType = (in_array($aURL[2], array('audio', 'video', 'subtitle')))? (($aURL[2]==='subtitle')?'application':$aURL[2]) : 'video';
+    header('Content-type: ' . $sContentType . '/mp4');
+    
+    echo fread($fp, $aSegment['size']);
+    
+} else {
+    header("HTTP/1.0 404 Not Found");
+}
+
+function my_fseek($fp, $pos, $first = 0) {
+
+// set to 0 pos initially, one-time
+    if ($first)
+        fseek($fp, 0, SEEK_SET);
+
+// get pos float value
+    $pos = floatval($pos);
+
+// within limits, use normal fseek
+    if ($pos <= PHP_INT_MAX)
+        fseek($fp, $pos, SEEK_CUR);
+// out of limits, use recursive fseek
+    else {
+        fseek($fp, PHP_INT_MAX, SEEK_CUR);
+        $pos -= PHP_INT_MAX;
+        my_fseek($fp, $pos);
+    }
+}
+
+function parseSegList($sXMLFile) {
+
+    $aFiles = array();
+
+    $xmlparser = xml_parser_create();
+    $xmldata = file_get_contents($sXMLFile);
+    xml_parse_into_struct($xmlparser, $xmldata, $elements);
+    xml_parser_free($xmlparser);
+
+    foreach ($elements as $K => $V) {
+
+        if ($V['tag'] == 'FILE' && $V['type'] == 'open') {
+            $sLastFile = $V['attributes']['REF'];
+            $aFiles[$sLastFile] = array();
+        }
+
+        if ($V['type'] == 'complete') {
+            $aFiles[$sLastFile][strtolower($V['tag'])] = $V['value'];
+        }
+    }
+
+    return $aFiles;
+}
+
+?>
