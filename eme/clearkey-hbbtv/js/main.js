@@ -101,7 +101,7 @@ function handleMessage(event) {
   console.log('message event: ', event);
   //var license = generateLicense();
   var te = new TextEncoder();
-  var license = te.encode('{"keys":[{"kty":"oct","k":"zMDys7J5kmSWp_XSXaaS9g","kid":"J5kmSWp_XSXaafKzsnmafw"}],"type":"tempora    ry"}');
+  var license = te.encode('{"keys":[{"kty":"oct","k":"zMDys7J5kmSWp_XSXaaS9g","kid":"J5kmSWp_XSXaafKzsnmafw"}],"type":"temporary"}');
   console.log('license: ', license);
 
   var session = event.target;
