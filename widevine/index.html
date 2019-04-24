@@ -20,7 +20,7 @@ navigator.requestMediaKeySystemAccess('com.widevine.alpha',
     promise.then(
       function(createdMediaKeys) {
         console.log('createdMediaKeys', createdMediaKeys);
-        val video = document.getElementById("test");
+        var video = document.getElementById("test");
         return video.setMediaKeys(createdMediaKeys);
       }
     ).catch(
