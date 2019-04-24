@@ -3,24 +3,13 @@
 <video id="test">
 <script>
 console.log('navigator.requestMediaKeySystemAccess');
-let basicVideoCapabilities = [
-  {contentType: 'video/mp4; codecs="avc1.42E01E"'},
-  {contentType: 'video/webm; codecs="vp8"'}
-];
-
-let basicConfig = {
-  videoCapabilities: basicVideoCapabilities
-};
-let offlineConfig = {
-  videoCapabilities: basicVideoCapabilities,
-  persistentState: 'required',
-  sessionTypes: ['persistent-license']
-};
-
-// Try the offline config first, then fall back to the basic config.
-let configs = [offlineConfig, basicConfig];
-
-navigator.requestMediaKeySystemAccess('com.widevine.alpha', configs).then(
+navigator.requestMediaKeySystemAccess('com.widevine.alpha',
+[
+  {
+    initDataTypes: ['webm'],
+    videoCapabilities: [{ contentType: 'video/webm; codecs="vp9"' }],
+  }
+]).then(
   function(keySystemAccess) {
     console.log('keySystemAccess', keySystemAccess);
     console.log('keySystemAccess:conf', keySystemAccess.getConfiguration());
