@@ -1,5 +1,6 @@
 <html>
 <body>
+<video id="test">
 <script>
 console.log('navigator.requestMediaKeySystemAccess');
 navigator.requestMediaKeySystemAccess('com.widevine.alpha',
@@ -19,7 +20,8 @@ navigator.requestMediaKeySystemAccess('com.widevine.alpha',
     promise.then(
       function(createdMediaKeys) {
         console.log('createdMediaKeys', createdMediaKeys);
-        //return video.setMediaKeys(createdMediaKeys);
+        val video = document.getElementById("test");
+        return video.setMediaKeys(createdMediaKeys);
       }
     ).catch(
       console.error.bind(console, 'Unable to set MediaKeys')
