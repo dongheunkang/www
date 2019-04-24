@@ -7,7 +7,6 @@ navigator.requestMediaKeySystemAccess('com.widevine.alpha',
   {
     initDataTypes: ['webm'],
     videoCapabilities: [{ contentType: 'video/webm; codecs="vp9"' }],
-    distinctiveIdentifier : "required" 
   }
 ]).then(
   function(keySystemAccess) {
