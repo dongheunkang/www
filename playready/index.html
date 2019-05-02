@@ -1,0 +1,52 @@
+<html>
+<body>
+<video id="test">
+<script>
+console.log('navigator.requestMediaKeySystemAccess');
+let basicVideoCapabilities = [
+  {contentType: 'video/mp4; codecs="avc1.42E01E"'},
+  {contentType: 'video/webm; codecs="vp8"'}
+];
+
+let basicConfig = {
+  videoCapabilities: basicVideoCapabilities
+};
+let offlineConfig = {
+  videoCapabilities: basicVideoCapabilities,
+  persistentState: 'required',
+  sessionTypes: ['persistent-license']
+};
+
+// Try the offline config first, then fall back to the basic config.
+let configs = [offlineConfig, basicConfig];
+
+navigator.requestMediaKeySystemAccess('com.microsoft.playready', configs).then(
+  function(keySystemAccess) {
+    console.log('keySystemAccess', keySystemAccess);
+    console.log('keySystemAccess:conf', keySystemAccess.getConfiguration());
+    var promise =  keySystemAccess.createMediaKeys();
+    promise.catch(
+      console.error.bind(console, 'Unable to create MediaKeys')
+    );
+    promise.then(
+      function(createdMediaKeys) {
+        console.log('createdMediaKeys', createdMediaKeys);
+        var video = document.getElementById("test");
+        return video.setMediaKeys(createdMediaKeys);
+      }
+    ).catch(
+      console.error.bind(console, 'Unable to set MediaKeys')
+    );
+    promise.then(
+      function(createdMediaKeys) {
+        var keySession = createdMediaKeys.createSession("persistent-license");
+        // return keySession.generateRequest('keyids', initData);
+      }
+    ).catch(
+      console.error.bind(console, 'Unable to create or initialize key session')
+    );
+  }
+);
+</script>
+</body>
+</html>
