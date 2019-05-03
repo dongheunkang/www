@@ -16,7 +16,8 @@ let basicConfig = {
 let offlineConfig = {
   videoCapabilities: basicVideoCapabilities,
   persistentState: 'required',
-  sessionTypes: ['persistent-license']
+  sessionTypes: ['persistent-license'],
+  distinctiveIdentifier : "required"
 };
 
 // Try the offline config first, then fall back to the basic config.
