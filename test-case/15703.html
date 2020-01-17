@@ -1,0 +1,50 @@
+<html>
+<body style="background-color:white;">
+<div id="output" class="output">
+  <pre style="font-size:22px;" id="log"></pre>
+</div>
+ 
+<script>
+var trace = {
+  log: function() {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    document.querySelector('#log').textContent += line + '\n';
+  },
+
+  clearLog: function() {
+    document.querySelector('#log').textContent = '';
+  },
+};
+
+function query(para) {
+  navigator.requestMediaKeySystemAccess('com.widevine.alpha', 
+    [{ initDataTypes: ['webm'], videoCapabilities: [{ contentType: para }]}]
+  ).then(
+    function(keySystemAccess) { 
+      trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + para + "')");
+      trace.log("=> Supported (videoCapabilities:" +JSON.stringify(keySystemAccess.getConfiguration().videoCapabilities) + ")");
+    }
+  ).catch(
+    function(error) {
+      trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + para + "')");
+      trace.log("=> Not Suppored ("+error+")");
+    }
+  );
+}
+
+function test() {
+  trace.log('-----------------------------------------------------');
+  trace.log(' navigator.requestMediaKeySystemAccess Test Case');
+  trace.log('-----------------------------------------------------');
+  query('video/webm; codecs="vp9"');
+  query('video/webm; codecs="vp9.2"');
+  query('video/webm; codecs="vp09.02.10.08"');
+}
+test();
+</script>
+</body>
+</html>
+
