@@ -176,6 +176,7 @@ function timeupdate_handler() {
   if (widevine_test && check_time(50)) {
     widevine_test = false;
     unload_media(function() {
+      trace.clearLog();
       playready_test = true;
       pause_test = false;
       seek_test = false;
