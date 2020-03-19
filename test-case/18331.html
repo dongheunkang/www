@@ -158,17 +158,16 @@ function timeupdate_handler() {
 	  seek_test = true;
     seek(30); 
   }
-  if (check_time(50)) {
-	  if (widevine_test) {
-      widevine_test = false;
-      unload_media();
-      playready_test = true;
-      load();
-    }
-	  if (playready_test) {
-      playready_test = false;
-      unload_media();
-    }
+  if (widevine_test && check_time(50)) {
+    widevine_test = false;
+    unload_media();
+    playready_test = true;
+    pause_test = false;
+    seek_test = false;
+    load();
+  } else if (playready_test && check_time(50)) {
+    playready_test = false;
+    unload_media();
   }
 }
 
