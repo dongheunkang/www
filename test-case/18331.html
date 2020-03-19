@@ -66,8 +66,12 @@ function onError(error) {
   console.error('Error code', error.code, 'object', error);
 }
 
-function unloadPlayer() {
-  window.player.destroy();
+function unloadPlayer(callback) {
+  window.player.destroy().then(function() {
+    if (callback) callback();
+  }).catch(function(error) {
+    console.error("destroy error" + error);
+  }
 }
 </script>
 </head>
@@ -160,20 +164,21 @@ function timeupdate_handler() {
   }
   if (widevine_test && check_time(50)) {
     widevine_test = false;
-    unload_media();
-    playready_test = true;
-    pause_test = false;
-    seek_test = false;
-    load();
+    unload_media(function() {
+      playready_test = true;
+      pause_test = false;
+      seek_test = false;
+      load();
+    });
   } else if (playready_test && check_time(50)) {
     playready_test = false;
     unload_media();
   }
 }
 
-function unload_media() {
+function unload_media(callback) {
   trace.log("unload");
-  unloadPlayer();
+  unloadPlayer(callback);
   trace.log("test done");
 }
 
