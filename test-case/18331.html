@@ -31,11 +31,13 @@ function loadPlayer() {
       }
     });
   } else if (playready_test) {
-    uri = "https://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel-dash-playready.ism/.mpd";
+          //'com.microsoft.playready': 'https://test.playready.microsoft.com/service/rightsmanager.asmx?PlayRight=1&UseSimpleNonPersistentLicense=1'
+    //uri = "https://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel-dash-playready.ism/.mpd";
+    uri = "https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest.mpd";
     player.configure({
       drm: {
         servers: {
-          'com.microsoft.playready': 'https://test.playready.microsoft.com/service/rightsmanager.asmx?PlayRight=1&UseSimpleNonPersistentLicense=1'
+          'com.microsoft.playready': 'https://drm-playready-licensing.axtest.net/AcquireLicense'
         }
       }
     });
