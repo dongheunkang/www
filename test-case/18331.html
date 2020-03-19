@@ -1,0 +1,189 @@
+<html>
+<head>
+<script src="shaka-player.compiled.js"></script>
+<script>
+function loadPlayer() {
+  // Install built-in polyfills to patch browser incompatibilities.
+  shaka.polyfill.installAll();
+
+  // Check to see if the browser supports the basic APIs Shaka needs.
+  if (!shaka.Player.isBrowserSupported()) {
+    // This browser does not have the minimum set of APIs we need.
+    console.error('Browser not supported!');
+    return;
+  }
+
+  // Create a Player instance.
+  var video = document.getElementById('player');
+  var player = new shaka.Player(video);
+  player.configure({
+    drm: {
+      servers: {
+        'com.widevine.alpha': 'https://cwip-shaka-proxy.appspot.com/no_auth'
+      }
+    }
+  });
+
+  // Attach player to the window to make it easy to access in the JS console.
+  window.player = player;
+
+  // Listen for error events.
+  player.addEventListener('error', onErrorEvent);
+
+  var uri = "https://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel-dash-widevine.ism/.mpd";
+  // Try to load a manifest.
+  // This is an asynchronous process.
+  player.load(uri).then(function() {
+    // This runs if the asynchronous load is successful.
+    console.log('The video has now been loaded!');
+    document.querySelector('#player').play();
+  }).catch(onError);  // onError is executed if the asynchronous load fails.
+}
+
+function onErrorEvent(event) {
+  // Extract the shaka.util.Error object from the event.
+  onError(event.detail);
+}
+
+function onError(error) {
+  // Log the error.
+  console.error('Error code', error.code, 'object', error);
+}
+
+function unloadPlayer() {
+  window.player.destroy();
+}
+</script>
+</head>
+<body style="background-color:white;">
+<div id="video" style="position:absolute;left:500;width:640;height:266;">
+<video id="player" width='100%' height='100%'>
+</div>
+<div id="output" class="output">
+  <pre style="font-size:22px;" id="info"></pre>
+  <pre style="font-size:22px;" id="log"></pre>
+</div>
+<script>
+var trace = {
+  log: function() {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    document.querySelector('#log').textContent += line + '\n';
+  },
+
+  clearLog: function() {
+    document.querySelector('#log').textContent = '';
+  },
+};
+
+function load() {
+  document.querySelector('#player').setAttribute("autoplay", "");
+  loadPlayer();
+  document.querySelector('#player').addEventListener("timeupdate", timeupdate_handler);
+  trace.log("load");
+}
+
+function check_time(time) {
+  var margin = 0.5;
+  var cur = document.querySelector('#player').currentTime;
+  if (cur >= time && cur <= time + margin)
+    return true;
+
+  return false;
+}
+
+function seek(time) {
+  trace.log("seek " + time + " second");
+  document.querySelector('#player').currentTime = time;
+  document.querySelector('#player').addEventListener("ended", ended_handler);
+}
+
+var isfullscreen = false;
+function fullscreen(flag) {
+  if (flag) {
+    isfullscreen = true;
+    document.querySelector('#video').style.left = 0; 
+    document.querySelector('#video').style.top = 0; 
+    document.querySelector('#video').style.width = window.innerWidth;
+    document.querySelector('#video').style.height = window.innerHeight;
+  } else {
+    document.querySelector('#video').style.left = 500; 
+    document.querySelector('#video').style.top = 0; 
+    document.querySelector('#video').style.width = 640; 
+    document.querySelector('#video').style.height = 266; 
+  }
+}
+
+function pause() {
+  trace.log("pause and fullscreen");
+  document.querySelector('#player').pause();
+  fullscreen(true);
+  setTimeout(function() {
+    trace.log("exit fullscreen and play");
+    fullscreen(false);
+    document.querySelector('#player').play();
+  }, 2000);
+}
+ 
+var pause_test = false;
+var seek_test = false;
+var loop_test = false;
+function timeupdate_handler() {
+  document.querySelector('#info').textContent = "currentTime: " + document.querySelector('#player').currentTime;
+  if (pause_test == false && check_time(10)) {
+	pause_test = true;
+    pause(); 
+  }
+  if (seek_test == false && check_time(15)) {
+	seek_test = true;
+    seek(30); 
+  }
+  if (loop_test) {
+	  document.querySelector('#player').addEventListener("seeked", seeked_handler);
+    var top = parseInt(document.querySelector('#video').style.top);
+    document.querySelector('#video').style.top = top + 5;
+  }
+}
+
+var loop_count = 0;
+function unload_media() {
+  trace.log("unload");
+  unloadPlayer();
+  trace.log("test done");
+}
+
+function seeked_handler() {
+  loop_count += 1;
+  trace.log("loop count = " + loop_count);
+  document.querySelector('#video').style.top = -300;
+  if (loop_count == 3) {
+    setTimeout(unload_media, 2000);
+  }
+}
+
+function ended_handler() {
+  trace.log("ended");
+  unloadPlayer();
+  loop();
+}
+
+function loop() {
+  loop_test = true;
+  trace.clearLog();
+  trace.log("test loop and autoplay and video position update");
+  document.querySelector('#player').setAttribute("loop", "");
+  document.querySelector('#player').setAttribute("autoplay", "");
+  document.querySelector('#video').style.top = -300;
+  loadPlayer();
+}
+
+function test() {
+  load();
+}
+test();
+</script>
+</body>
+</html>
+
