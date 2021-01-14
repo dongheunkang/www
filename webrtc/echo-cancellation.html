@@ -1,0 +1,24 @@
+<html>
+<head>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+</head>
+<body style="background-color:white;">
+<button id="bt1" onclick="echo_cancel(true)">EC on</button>
+<button id="bt2" onclick="echo_cancel(false)">EC off</button>
+<button onclick="location.reload()">reload</button></br>
+<audio id="audio" controls autoplay></audio><br>
+<div id="div"></div>
+<script>
+var log = msg => div.innerHTML += msg + "<br>";
+function echo_cancel(flag) {
+  log("echoCancellation : " + flag); 
+  navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: flag }})
+    .then(stream => audio.srcObject = stream)
+    .catch(e => log(e));
+  document.getElementById("bt1").disabled = true;
+  document.getElementById("bt2").disabled = true;
+}
+
+</script>
+</body>
+</html>
