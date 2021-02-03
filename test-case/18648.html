@@ -2,6 +2,7 @@
 <head>
 <script src="shaka-player.compiled.js"></script>
 <script>
+var test_result = false;
 var widevine_test = false;
 var playready_test = false;
 
@@ -192,6 +193,7 @@ function unload_media(callback) {
   trace.log("unload");
   unloadPlayer(callback);
   trace.log("test done");
+  test_result = true;
 }
 
 function seeked_handler() {
