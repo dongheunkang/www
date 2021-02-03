@@ -193,7 +193,8 @@ function unload_media(callback) {
   trace.log("unload");
   unloadPlayer(callback);
   trace.log("test done");
-  test_result = true;
+  if (playready_test == false)
+    test_result = true;
 }
 
 function seeked_handler() {
