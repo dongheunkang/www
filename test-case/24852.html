@@ -1,0 +1,62 @@
+<html>
+<body style="background-color:white;">
+<h3>WebMedia Test EME AC4, FlAC profile capabilities</h3>
+<div id="output" class="output">
+  <pre style="font-size:16px;" id="log"></pre>
+</div>
+ 
+<script>
+var trace = {
+  log: function() {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    document.querySelector('#log').textContent += line + '\n';
+  },
+
+  clearLog: function() {
+    document.querySelector('#log').textContent = '';
+  },
+};
+
+var capabilities_expected_true = [
+  'audio/mp4; codecs="ac-4.02.01.01"',
+  'audio/mp4; codecs="flac"'
+];
+
+async function query() {
+  fail_count = 0;
+  trace.log('-----------------------------------------');
+  trace.log('EME AC4, FLAC profile TC (expected True)');
+  trace.log('-----------------------------------------');
+  for (var data of capabilities_expected_true) {
+    try {
+      mksa = await navigator.requestMediaKeySystemAccess('com.widevine.alpha', 
+        [{ initDataTypes: ['cenc'], audioCapabilities: [{ contentType: data }]}]
+      );
+      if (mksa) {
+        trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + data + "')");
+        trace.log("=> Supported (videoCapabilities:" +JSON.stringify(mksa.getConfiguration().videoCapabilities) + ")");
+      }
+    } catch(error) {
+      trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + data + "')");
+      trace.log("=> Not Suppored ("+error+")");
+      fail_count += 1;
+    }
+  }
+  trace.log('-----------------------------------------');
+
+  return !(fail_count > 0);
+}
+
+var result = false;
+query().then(function(a) { console.log("result=", a);result = a; });
+
+function test() {
+  return result;
+}
+</script>
+</body>
+</html>
+
