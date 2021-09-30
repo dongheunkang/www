@@ -23,32 +23,17 @@ function loadPlayer() {
   var uri = "";
   
   if (widevine_test) {
-    uri = "https://content.uplynk.com/054225d59be2454fabdca3e96912d847.mpd?ad=cleardash&pr.version=2&pr.playenabler=B621D91F-EDCC-4035-8D4B-DC71760D43E9&pr.securitylevel=150";
+    uri = "https://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel-dash-widevine.ism/.mpd";
     player.configure({
       drm: {
         servers: {
-          'com.widevine.alpha': 'https://content.uplynk.com/wv'
+          'com.widevine.alpha': 'https://cwip-shaka-proxy.appspot.com/no_auth'
         }
       }
     });
-/*
-    player.getNetworkingEngine().registerRequestFilter(function(type, request) {
-      // Only add headers to license requests:
-      if (type == shaka.net.NetworkingEngine.RequestType.LICENSE) {
-        // This is the specific header name and value the server wants:
-        request.headers['X-AxDRM-Message'] = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2ZXJzaW9uIjoxLCJjb21fa2V5X2lkIjoiYjMzNjRlYjUtNTFmNi00YWUzLThjOTgtMzNjZWQ1ZTMxYzc4IiwibWVzc2FnZSI6eyJ0eXBlIjoiZW50aXRsZW1lbnRfbWVzc2FnZSIsImtleXMiOlt7ImlkIjoiOWViNDA1MGQtZTQ0Yi00ODAyLTkzMmUtMjdkNzUwODNlMjY2IiwiZW5jcnlwdGVkX2tleSI6ImxLM09qSExZVzI0Y3Iya3RSNzRmbnc9PSJ9XX19.4lWwW46k-oWcah8oN18LPj5OLS5ZU-_AQv7fe0JhNjA';
-      }
-    });
-*/
   } else if (playready_test) {
-    uri = "https://profficialsite.origin.mediaservices.windows.net/c51358ea-9a5e-4322-8951-897d640fdfd7/tearsofsteel_4k.ism/manifest(format=mpd-time-csf)";
-    player.configure({
-      drm: {
-        servers: {
-          'com.microsoft.playready': 'https://test.playready.microsoft.com/service/rightsmanager.asmx'
-        }
-      }
-    });
+    // uri = "https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest.mpd";
+    // 'com.microsoft.playready': 'https://drm-playready-licensing.axtest.net/AcquireLicense'
 /*
     player.getNetworkingEngine().registerRequestFilter(function(type, request) {
       // Only add headers to license requests:
@@ -58,7 +43,16 @@ function loadPlayer() {
       }
     });
 */
+    uri = "https://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel-dash-playready.ism/.mpd";
+    player.configure({
+      drm: {
+        servers: {
+          'com.microsoft.playready': 'https://test.playready.microsoft.com/service/rightsmanager.asmx?PlayRight=1&UseSimpleNonPersistentLicense=1'
+        }
+      }
+    });
   }
+
   // Attach player to the window to make it easy to access in the JS console.
   window.player = player;
 
