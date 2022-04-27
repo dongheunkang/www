@@ -1,0 +1,61 @@
+<html>
+<body style="background-color:white;">
+<h3>WebMedia Test support "com.microsoft.playready.recommendation" key system</h3>
+<div id="output" class="output">
+  <pre style="font-size:16px;" id="log"></pre>
+</div>
+ 
+<script>
+var trace = {
+  log: function() {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    document.querySelector('#log').textContent += line + '\n';
+  },
+
+  clearLog: function() {
+    document.querySelector('#log').textContent = '';
+  },
+};
+
+var capabilities = [
+  'video/mp4; codecs="avc1.42E01E"'
+];
+
+async function query() {
+  fail_count = 0;
+  trace.log('--------------------------------------------------------------');
+  trace.log('Support com.microsoft.playready.recommendation (expected True)');
+  trace.log('-----------------------------------------i--------------------');
+  for (var data of capabilities) {
+    try {
+      mksa = await navigator.requestMediaKeySystemAccess('com.microsoft.playready.recommendation', 
+        [{ initDataTypes: ['cenc'], videoCapabilities: [{ contentType: data }]}]
+      );
+      if (mksa) {
+        trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + data + "')");
+        trace.log("=> Supported com.microsoft.playready.recommendation (videoCapabilities:" +JSON.stringify(mksa.getConfiguration().videoCapabilities) + ")");
+      }
+    } catch(error) {
+      trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + data + "')");
+      trace.log("=> Not Suppored com.microsoft.playready.recommendation ("+error+")");
+      fail_count += 1;
+    }
+  }
+  trace.log('-----------------------------------------');
+
+  return !(fail_count > 0);
+}
+
+var result = false;
+query().then(function(a) { console.log("result=", a);result = a; });
+
+function test() {
+  return result;
+}
+</script>
+</body>
+</html>
+
