@@ -17,12 +17,12 @@ function loadPlayer() {
   var video = document.getElementById('player');
   var player = new shaka.Player(video);
   var uri = "";
-  
-  uri = "https://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel-dash-widevine.ism/.mpd";
+
+  uri = "https://content.uplynk.com/054225d59be2454fabdca3e96912d847.mpd?ad=cleardash&pr.version=2&pr.playenabler=B621D91F-EDCC-4035-8D4B-DC71760D43E9&pr.securitylevel=150";
   player.configure({
     drm: {
       servers: {
-        'com.widevine.alpha': 'https://cwip-shaka-proxy.appspot.com/no_auth'
+        'com.widevine.alpha': 'https://content.uplynk.com/wv'
       }
     }
   });
