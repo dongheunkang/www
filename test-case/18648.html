@@ -5,6 +5,10 @@
 var test_result = false;
 var widevine_test = false;
 var playready_test = false;
+var wv_key = false;
+let result = location.href.indexOf("wv=true")
+if (result > 0)
+  wv_key = true;
 
 function loadPlayer() {
   // Install built-in polyfills to patch browser incompatibilities.
@@ -217,6 +221,10 @@ function ended_handler() {
 
 function test() {
   widevine_test = true;
+  if (wv_key == false) {
+    widevine_test = false;
+    playready_test = true;
+  }
   load();
 }
 test();
