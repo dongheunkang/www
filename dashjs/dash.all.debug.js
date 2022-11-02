@@ -27107,7 +27107,11 @@ function DashManifestModel() {
       var representation = isInteger(representationId) && representationId >= 0 && representationId < adaptation.Representation_asArray.length ? adaptation.Representation_asArray[representationId] : adaptation.Representation_asArray[0];
 
       if (representation) {
-        codec = representation.mimeType + ';codecs="' + representation.codecs + '"';
+        var rep_codecs = representation.codecs;
+        if (representation["scte214:supplementalCodecs"])
+          rep_codecs = representation["scte214:supplementalCodecs"];
+
+        codec = representation.mimeType + ';codecs="' + rep_codecs + '"';
 
         if (addResolutionInfo && representation.width !== undefined) {
           codec += ';width="' + representation.width + '";height="' + representation.height + '"';
