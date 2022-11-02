@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="dash.all.debug.js"></script>
+</head>
+<body style="background-color:white;margin:0px;">
+<video id="videoplayer" width="100%" height="100%" controls></video>
+<script>
+{
+  var url = "https://atri.akamaized.net/cmaf/live-ull/2028721/nexplayer-hevc-1080p50-sdr/manifest.mpd";
+  var player = dashjs.MediaPlayer().create();
+  player.initialize(document.querySelector("#videoplayer"), url, true); 
+}
+</script>
+</body>
+</html>
