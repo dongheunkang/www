@@ -1,0 +1,227 @@
+<html>
+<head>
+<script src="shaka-player.compiled.js"></script>
+<script>
+var test_cases = [
+  [],
+  ['1. O_AST-MP4-MPD-dvhe.05-00-23_976',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Sink_SDK/v3.0/P5_DVHE_23976_HLS_MPD/p5_dvhe_23976.mpd',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Sink_SDK/v3.0/P5_DVH1_23976_HLS_MPD/p5_dvh1_23976.mpd'],
+  ['2. O_AST-MP4-HLS-dvhe.05-00-23_976',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Sink_SDK/v3.0/P5_DVHE_23976_HLS_MPD/p5_dvhe_23976.m3u8',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Sink_SDK/v3.0/P5_DVH1_23976_HLS_MPD/p5_dvh1_23976.m3u8'],
+  ['3. O_AST-MP4-MPD-dvhe.08-01-23_976',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Source_SDK/v2.6/P81_DVHE_23976_HLS_MPD/p81_dvhe_23976.mpd',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Source_SDK/v2.6/P81_DVH1_23976_HLS_MPD/p81_dvh1_23976.mpd',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Source_SDK/v2.6/P81_DVHE_23976_HLS_MPD/p81_dvhe_23976_reversed.mpd',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Source_SDK/v2.6/P81_DVH1_23976_HLS_MPD/p81_dvh1_23976_reversed.mpd'],
+  ['4. O_AST-MP4-HLS-dvhe.08-01-23_976',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Source_SDK/v2.6/P81_DVHE_23976_HLS_MPD/p81_dvhe_23976.m3u8',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Source_SDK/v2.6/P81_DVH1_23976_HLS_MPD/p81_dvh1_23976.m3u8'],
+  ['5. O_AST-MP4-MPD-dvhe.08-02-23_976',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Sink_SDK/v3.0/P82_DVHE_23976_HLS_MPD/p82_dvhe_23976.mpd',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Sink_SDK/v3.0/P82_DVH1_23976_HLS_MPD/p82_dvh1_23976.mpd'],
+  ['6. O_AST-MP4-HLS-dvhe.08-02-23_976',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Sink_SDK/v3.0/P82_DVHE_23976_HLS_MPD/p82_dvhe_23976.m3u8',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Sink_SDK/v3.0/P82_DVH1_23976_HLS_MPD/p82_dvh1_23976.m3u8'],
+  ['7. O_AST-MP4-MPD-dvav.09-02-23_976',
+   'http://gf1.lge.com/~dongheun.kang/test-case/dolby/test/p92_dvav_23976_fix.mpd',
+   //'https://d9zmmjtv72w5o.cloudfront.net/User/Source_SDK/v2.6/P92_DVAV_23976_HLS_MPD/p92_dvav_23976.mpd',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Source_SDK/v2.6/P92_DVA1_23976_HLS_MPD/p92_dva1_23976.mpd'],
+  ['8. O_AST-TS-HLS-dvhe.04-02-23_976',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Team_Goldy/SDK/hls/p4/23fps/Profile4_SSDK_23fps.m3u8',
+   'https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8'],
+  ['9. O_AST-TS-HLS-dvhe.05-00-23_976',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Team_Goldy/SDK/hls/p5/23fps/Profile5_SSDK_23fps.m3u8'],
+  ['10. Widevine_AST-dvhe.05-00-MP4-29_97 (DRM)',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Team_Goldy/MobileSDK/DRM_Widevine/DRM_DolbyVision_Profile5/stream.mpd'],
+  ['11. Widevine_AST-dvhe.08-02-MP4-29_97 (DRM)',
+   'https://d9zmmjtv72w5o.cloudfront.net/MobileKits/sdk1.5/P8.2_FHD-2997-short/dash-widevine/stream.mpd'],
+  ['12. Widevine_AST-dvav.09-02-MP4-59_94 (DRM)',
+   'https://d9zmmjtv72w5o.cloudfront.net/User/Team_Goldy/MobileSDK/DRM_Widevine/DRM_DolbyVision_Profile9/stream.mpd',
+   './DRM_Widevine/DRM_DolbyVision_Profile9/stream.mpd']
+];
+var player = null;
+var serial_no = 0;
+var tc_id = 0;
+
+function run_tc(sno, tid) {
+  serial_no = sno;
+  tc_id = tid;
+  loadPlayer();
+}
+
+function loadPlayer() {
+  if (player) {
+		unloadPlayer(loadPlayer);
+    return;
+  }
+  trace.clearLog();
+  // Install built-in polyfills to patch browser incompatibilities.
+  shaka.polyfill.installAll();
+
+  // Check to see if the browser supports the basic APIs Shaka needs.
+  if (!shaka.Player.isBrowserSupported()) {
+    // This browser does not have the minimum set of APIs we need.
+    console.error('Browser not supported!');
+    return;
+  }
+
+  // Create a Player instance.
+  var video = document.getElementById('player');
+  player = new shaka.Player(video);
+
+  // Attach player to the window to make it easy to access in the JS console.
+  window.player = player;
+
+  // Listen for error events.
+  player.addEventListener('error', onErrorEvent);
+  var uri = test_cases[serial_no][tc_id];
+  // Try to load a manifest.
+  // This is an asynchronous process.
+
+  if (serial_no > 9) {
+    player.configure({
+      streaming: {
+        retryParameters: { timeout: 1000000 }
+      },
+      drm: {
+        servers: { 'com.widevine.alpha': 'https://widevine-dash.ezdrm.com/proxy?pX=E8A6EE' }
+      }
+    });
+  }
+
+  player.load(uri).then(function() {
+    // This runs if the asynchronous load is successful.
+    console.log('The video has now been loaded!');
+  }).catch(onError);  // onError is executed if the asynchronous load fails.
+
+  document.getElementById('title').innerHTML = test_cases[serial_no][0] + " TC" + tc_id + " (shaka-player:" + shaka.Player.version + ")";
+  document.getElementById('mpd').innerHTML = uri;
+}
+
+function onErrorEvent(event) {
+  // Extract the shaka.util.Error object from the event.
+  console.log("onErrorEvent");
+  onError(event.detail);
+}
+
+function onError(error) {
+  // Log the error.
+  console.error('Error code', error.code, 'object', error);
+  trace.log('Error code', error.code, 'object', error);
+}
+
+function unloadPlayer(callback) {
+  window.player.destroy().then(function() {
+    if (callback) callback();
+    player = null;
+  }).catch(function(error) {
+    console.error("destroy error" + error);
+  });
+}
+
+</script>
+</head>
+<body style="background-color:white;margin:20px">
+<h1 id="title">Dolby OTT AST test cases</h1>
+<div id="mpd"></div>
+<div id="video" style="position:absolute;top:600;left:1000;width:640;height:360;">
+<video id="player" width='100%' height='100%'>
+</div>
+<div id="output" class="output">
+  <pre style="font-size:22px;" id="info"></pre>
+  <pre style="font-size:22px;" id="log"></pre>
+</div>
+<div style="position:absolute;top:600;font-size:22px;">
+1. O_AST-MP4-MPD-dvhe.05-00-23_976
+<a href="#" onclick="run_tc(1,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(1,2)" type="button">Test vector2</a> </br>
+2. O_AST-MP4-HLS-dvhe.05-00-23_976
+<a href="#" onclick="run_tc(2,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(2,2)" type="button">Test vector2</a> </br>
+3. O_AST-MP4-MPD-dvhe.08-01-23_976
+<a href="#" onclick="run_tc(3,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(3,2)" type="button">Test vector2</a> |
+<a href="#" onclick="run_tc(3,3)" type="button">Test vector3</a> |
+<a href="#" onclick="run_tc(3,4)" type="button">Test vector4</a> </br>
+4. O_AST-MP4-HLS-dvhe.08-01-23_976
+<a href="#" onclick="run_tc(4,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(4,2)" type="button">Test vector2</a> </br>
+5. O_AST-MP4-MPD-dvhe.08-02-23_976
+<a href="#" onclick="run_tc(5,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(5,2)" type="button">Test vector2</a> </br>
+6. O_AST-MP4-HLS-dvhe.08-02-23_976
+<a href="#" onclick="run_tc(6,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(6,2)" type="button">Test vector2</a> </br>
+7. O_AST-MP4-MPD-dvav.09-02-23_976
+<a href="#" onclick="run_tc(7,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(7,2)" type="button">Test vector2</a> </br>
+8. O_AST-TS-HLS-dvhe.04-02-23_976
+<a href="#" onclick="run_tc(8,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(8,2)" type="button">Art of Motion(shaka)</a> </br>
+9. O_AST-TS-HLS-dvhe.05-00-23_976
+<a href="#" onclick="run_tc(9,1)" type="button">Test vector1</a> </br>
+10. Widevine_AST-dvhe.05-00-MP4-29_97 (DRM)
+<a href="#" onclick="run_tc(10,1)" type="button">Test vector1</a> </br>
+11. Widevine_AST-dvhe.08-02-MP4-29_97 (DRM)
+<a href="#" onclick="run_tc(11,1)" type="button">Test vector1</a> </br>
+12. Widevine_AST-dvav.09-02-MP4-59_94 (DRM)
+<a href="#" onclick="run_tc(12,1)" type="button">Test vector1</a> |
+<a href="#" onclick="run_tc(12,2)" type="button">Test vector1(local)</a> </br>
+<a href="#" onclick="location.reload()" type="button">Reload Test Page</a> </br>
+</div>
+<script>
+var trace = {
+  log: function() {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    var total_lines = (document.querySelector('#log').textContent.match(/\n/g) || '').length + 1;
+    if (total_lines > 15)
+      document.querySelector('#log').textContent = '';
+
+    document.querySelector('#log').textContent = line + '\n' + document.querySelector('#log').textContent;
+  },
+
+  clearLog: function() {
+    document.querySelector('#log').textContent = '';
+  },
+};
+
+function timeupdate_handler() {
+  document.querySelector('#info').textContent = "currentTime: " + document.querySelector('#player').currentTime;
+}
+
+function event_handler(event) {
+  trace.log(event.type);
+}
+
+function addEventsHandler() {
+  var mediaevent_ = ["loadstart","suspend","abort","emptied","stalled",
+      "loadedmetadata","loadeddata","canplay","canplaythrough",
+      "playing","waiting","seeking","seeked","ended","durationchange",
+      "play","pause","ratechange","volumechange"];
+  var i = 0;
+  do {
+    var keyname = mediaevent_[i++];
+    document.querySelector('#player').addEventListener(keyname, event_handler, false);
+  } while (i < mediaevent_.length);
+}
+
+function load() {
+  document.querySelector('#player').setAttribute("autoplay", "");
+  document.querySelector('#player').setAttribute("controls", "");
+  document.querySelector('#player').addEventListener("timeupdate", timeupdate_handler);
+  addEventsHandler();
+}
+
+function play() {
+  document.querySelector('#player').play();
+}
+
+load();
+</script>
+</body>
+</html>
