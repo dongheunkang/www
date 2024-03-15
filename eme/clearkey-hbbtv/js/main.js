@@ -28,6 +28,17 @@ var config = [{
 var video = document.querySelector('video');
 video.addEventListener('encrypted', handleEncrypted, false);
 
+// Temporarily set hybridTV for using dashplayer instead of dashplayer2.
+var options = {};
+options.option = {};
+options.option.hybridTV = true;
+
+var source = document.createElement("source");
+source.setAttribute('src', '../video/EME/video_dash.mpd');
+source.setAttribute('type','application/dash+xml;mediaOption=' + escape(JSON.stringify(options)));
+video.appendChild(source);
+video.load();
+
 /*
 navigator.requestMediaKeySystemAccess('org.w3.clearkey', config).then(
   function(keySystemAccess) {
