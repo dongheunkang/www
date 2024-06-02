@@ -27,15 +27,14 @@ function loadPlayer() {
   var uri = "";
   
   if (widevine_test) {
-    uri = "https://content.uplynk.com/054225d59be2454fabdca3e96912d847.mpd?ad=cleardash&pr.version=2&pr.playenabler=B621D91F-EDCC-4035-8D4B-DC71760D43E9&pr.securitylevel=150";
+    uri = "https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest_1080p.mpd";
     player.configure({
       drm: {
         servers: {
-          'com.widevine.alpha': 'https://content.uplynk.com/wv'
+          'com.widevine.alpha': 'https://drm-widevine-licensing.axtest.net/AcquireLicense'
         }
       }
     });
-/*
     player.getNetworkingEngine().registerRequestFilter(function(type, request) {
       // Only add headers to license requests:
       if (type == shaka.net.NetworkingEngine.RequestType.LICENSE) {
@@ -43,7 +42,6 @@ function loadPlayer() {
         request.headers['X-AxDRM-Message'] = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2ZXJzaW9uIjoxLCJjb21fa2V5X2lkIjoiYjMzNjRlYjUtNTFmNi00YWUzLThjOTgtMzNjZWQ1ZTMxYzc4IiwibWVzc2FnZSI6eyJ0eXBlIjoiZW50aXRsZW1lbnRfbWVzc2FnZSIsImtleXMiOlt7ImlkIjoiOWViNDA1MGQtZTQ0Yi00ODAyLTkzMmUtMjdkNzUwODNlMjY2IiwiZW5jcnlwdGVkX2tleSI6ImxLM09qSExZVzI0Y3Iya3RSNzRmbnc9PSJ9XX19.4lWwW46k-oWcah8oN18LPj5OLS5ZU-_AQv7fe0JhNjA';
       }
     });
-*/
   } else if (playready_test) {
     uri = "https://media.axprod.net/TestVectors/MultiKey/Cmaf_h264_1080p_cbcs/manifest.mpd";
     player.configure({
