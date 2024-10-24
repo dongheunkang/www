@@ -114,8 +114,8 @@ function onError(error) {
 
 function unloadPlayer(callback) {
   window.player.destroy().then(function() {
-    if (callback) callback();
     player = null;
+    if (callback) callback();
   }).catch(function(error) {
     console.error("destroy error" + error);
   });
