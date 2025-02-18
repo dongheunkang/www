@@ -5,19 +5,40 @@
   <meta charset="UTF-8">  
   <title>WebCodecs demo: Encoding and Decoding</title>
   <style>
+/*
     canvas {
       padding: 10px;
       background: gold;
       margin: 5px;
     }
+*/
+    body { margin : 0px; }
+    h1 { color : white; font-size:40px;}
   </style>
 </head>
 
 <body>
-  <canvas id="src" width="640" height="360" style="visibility:hidden;"></canvas>
-  <div id="dst"></div>
+  <table style="width: 1920px; height :1080px; border:0px;" >
+    <colgroup>
+       <col span="1" style="width: 50%;">
+       <col span="1" style="width: 50%;">
+    </colgroup>
+    <tbody>  
+      <tr>
+        <td align="center" valign="middle">
+          <h1>WebGL Animation</h1>
+          <canvas id="src" width="640" height="480"></canvas>
+        </td>
+        <td align="center" valign="middle">
+          <h1><span style="font-size:44px;">WebCodecs</span> <span style="font-size:32px;">(HW H264 Encode and Decode)</span></h1>
+          <div id="dst"></div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
   
   <script>
+    window.onkeydown = (e) => {console.log(e); if (e.key == 'Enter') location = "cam.html"; else if (e.key == '1') location = "index.html"; }
     const foods = ['🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🥝','🍅','🥥','🥑','🍆','🥔','🥕','🌽','🌶️','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🌰',
                    '🍞','🍞','🥐','🥖','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🥙','🧆','🥚','🍳','🥘','🍲','🥣','🥗','🍿','🧈','🧂',
                    '🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🦀','🦞','🦐','🦑','🦪','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁',
@@ -40,7 +61,7 @@
       let r = Math.min(width, height) / 5;
       
       ctx.font = '30px Helvetica';
-      const text = getRandomFood() + "📹📷Hello WebCodecs 🎥🎞️" + getRandomFood();
+      const text = getRandomFood() + "📹📷Hello WebOS TV 🎥🎞️" + getRandomFood();
       const size = ctx.measureText(text).width;     
      
       let drawOneFrame = function (time) {
@@ -50,7 +71,7 @@
         ctx.fillRect(0, 0, width, height);
 
         ctx.translate(cx, cy);
-        ctx.rotate(angle);
+        //ctx.rotate(angle);
         ctx.scale(scale, scale);       
       
         ctx.fillStyle = "hsl(" + (angle * 40 ) + ",80%,50%)";
@@ -66,7 +87,7 @@
     }
     
     function startWorker() {
-      let worker = new Worker('video-worker.js', { name: "Video worker"});
+      let worker = new Worker('video-worker-gl2.js', { name: "Video worker"});
       worker.onmessage = function(e) {
         // Recreate worker in case of an error
         console.log('Worker error: ' + e.data);

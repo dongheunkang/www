@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">  
+  <title>WebCodecs demo: Encoding and Decoding</title>
+  <style>
+/*
+    canvas {
+      padding: 10px;
+      background: gold;
+      margin: 5px;
+    }
+*/
+    body { margin : 0px; }
+    h1 { color : white; font-size:40px;}
+  </style>
+</head>
+
+<body>
+  <table style="width: 1920px; height :1080px; border:0px;" >
+    <colgroup>
+       <col span="1" style="width: 50%;">
+       <col span="1" style="width: 50%;">
+    </colgroup>
+    <tbody>  
+      <tr>
+        <td align="center" valign="middle">
+          <h1>Camera MediaStream</h1>
+          <video id="src" width="640" height="480" autoplay></video>
+        </td>
+        <td align="center" valign="middle">
+          <h1><span style="font-size:44px;">WebCodecs</span> <span style="font-size:32px;">(HW H264 Encode and Decode)</span></h1>
+          <div id="dst"></div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <script>
+    window.onkeydown = (e) => {console.log(e); if (e.key == 'Enter') location = "cam1.html"; else if (e.key == '1') location = "index.html"; }
+
+    async function getMedia(constraints) {
+      console.log("getMedia");
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("getMedia ok");
+        document.getElementById("src").srcObject = stream;
+        startWorker();
+        /* use the stream */
+      } catch (err) {
+        /* handle the error */
+      }
+    }
+   
+    function startWorker() {
+      let worker = new Worker('video-worker-cam.js', { name: "Video worker"});
+      worker.onmessage = function(e) {
+        // Recreate worker in case of an error
+        console.log('Worker error: ' + e.data);
+        worker.terminate();
+        //startWorker();
+      };      
+      
+      // Capture animation track for the source canvas
+      let src_cnv = document.getElementById("src");
+      const fps = 20;
+      let stream = src_cnv.captureStream(fps);
+      const track = stream.getVideoTracks()[0]
+      media_processor = new MediaStreamTrackProcessor(track);
+      const reader = media_processor.readable;
+      
+      // Create a new destination canvas
+      const dst_cnv = document.createElement('canvas');
+      dst_cnv.width = src_cnv.width;
+      dst_cnv.height = src_cnv.height;
+      const dst = document.getElementById("dst");      
+      if (dst.firstChild)
+        dst.removeChild(dst.firstChild);
+      dst.appendChild(dst_cnv);
+      let offscreen = dst_cnv.transferControlToOffscreen();
+      worker.postMessage({
+        canvas : offscreen,
+        frame_source : reader,
+        fps : fps
+      }, [offscreen, reader]);          
+    }
+   
+    function main() {
+      if (!("VideoFrame" in window)) {
+        document.body.innerHTML = "<h1>WebCodecs API is not supported.</h1>";
+        return;
+      }
+
+      getMedia({ video: true });
+    }
+
+    document.body.onload = main;
+  </script>
+
+</body>
+
+</html>

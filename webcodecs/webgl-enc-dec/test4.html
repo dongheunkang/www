@@ -14,7 +14,7 @@
 </head>
 
 <body>
-  <canvas id="src" width="640" height="360" style="visibility:hidden;"></canvas>
+  <canvas id="src" width="400" height="400" style="visibility:hidden;"></canvas>
   <div id="dst"></div>
   
   <script>
@@ -66,7 +66,7 @@
     }
     
     function startWorker() {
-      let worker = new Worker('video-worker.js', { name: "Video worker"});
+      let worker = new Worker('video-worker-test4.js', { name: "Video worker"});
       worker.onmessage = function(e) {
         // Recreate worker in case of an error
         console.log('Worker error: ' + e.data);
