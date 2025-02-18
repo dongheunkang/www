@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebCodec MP4 decode sample</title>
+</head>
+<body style="background-color:white;">
+  <p>
+    Renderer:
+    <label for="renderer_2d">
+      <input id="renderer_2d" type="radio" name="renderer" value="2d" checked> 2D
+    </label>
+    <label for="renderer_webgl">
+      <input id="renderer_webgl" type="radio" name="renderer" value="webgl"> WebGL
+    </label>
+  </p>
+
+   <p>
+    Video:
+    <label for="video_1920_1080">
+      <input id="video_1920_1080" type="radio" name="content" value="Big_Buck_Bunny_1080_10s_10MB.mp4"> 1920x1080
+    </label>
+    <label for="video_1280_720">
+      <input id="video_1280_720" type="radio" name="content" value="bbb_video_avc_frag.mp4"> 1280x720
+    </label>
+    <label for="video_640_360">
+      <input id="video_640_360" type="radio" name="content" value="Big_Buck_Bunny_360_10s_10MB.mp4"> 640x360
+    </label>
+    <label for="video_320_240">
+      <input id="video_320_240" type="radio" name="content" value="movie_300.mp4" checked> 320x240
+    </label>
+  </p>
+
+  <p>
+    <button id="start">Start</button>
+    <button onclick="location.reload()">Reload</button>
+  </p>
+
+  <table cellspacing="8" id="status">
+    <tr><th align="right">Fetch</th><td id="fetch">Not started</td></tr>
+    <tr><th align="right">Demux</th><td id="demux">Not started</td></tr>
+    <tr><th align="right">Decode</th><td id="decode">Not started</td></tr>
+    <tr><th align="right">Render</th><td id="render">Not started</td></tr>
+  </table>
+
+  <canvas></canvas>
+
+  <script type="module">
+    // Play button.
+    const startButton = document.querySelector("#start");
+    startButton.addEventListener("click", () => {
+      document.querySelectorAll("input").forEach(input => input.disabled = true);
+      startButton.disabled = true;
+      start();
+    }, {once: true});
+
+    // Status UI.
+    const status = {
+      fetch: document.querySelector("#fetch"),
+      demux: document.querySelector("#demux"),
+      decode: document.querySelector("#decode"),
+      render: document.querySelector("#render"),
+    };
+
+    function setStatus(message) {
+      for (const key in message.data) {
+        status[key].innerText = message.data[key];
+      }
+    }
+
+    // Worker setup.
+    function start() {
+      const dataUri = document.querySelector("input[name=\"content\"]:checked").value;
+      const rendererName = document.querySelector("input[name=\"renderer\"]:checked").value;
+      const canvas = document.querySelector("canvas").transferControlToOffscreen();
+      const worker = new Worker("./worker.js");
+      worker.addEventListener("message", setStatus);
+      worker.postMessage({dataUri, rendererName, canvas}, [canvas]);
+    }
+  </script>
+</body>
+</html>
+
