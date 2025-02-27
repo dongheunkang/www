@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">  
+  <title>WebCodecs demo: Encoding and Decoding</title>
+  <style>
+    canvas {
+      padding: 10px;
+      background: gold;
+      margin: 5px;
+    }
+  </style>
+</head>
+
+<body style="background-color:white;">
+  <button id="bt1" onclick="main(640, 360)">start 640x360</button>
+  <button id="bt2" onclick="main(640, 368)">start 640x368</button>
+  <button id="bt3" onclick="main(384, 256)">start 384x256</button>
+  <button id="bt4" onclick="main(400, 400)">start 400x400</button>
+  <button id="btr" onclick="location.reload()">reload</button></br>
+  <p>
+    Codec:
+    <label>
+      <input id="codec_main" type="radio" name="codec" value="avc1.4D001F" > avc1.4D001F (h264 main)
+    </label>
+    <label>
+      <input id="codec_base" type="radio" name="codec" value="avc1.42001F" checked> avc1.42001F (h264 base)
+    </label><br/>
+    Encoder hardwareAcceleration:
+    <label>
+      <input id="enc_hw_1" type="radio" name="enc_hw" value=1> HW
+    </label>
+    <label>
+      <input id="enc_hw_0" type="radio" name="enc_hw" value=0 checked> SW 
+    </label><br/>
+    Decoder hardwareAcceleration:
+    <label>
+      <input id="dec_hw_1" type="radio" name="dec_hw" value=1> HW
+    </label>
+    <label>
+      <input id="dec_hw_0" type="radio" name="dec_hw" value=0 checked> SW 
+    </label>
+  </p>
+  <div id="dst"></div>
+  <canvas id="src" width="640" height="360" style="visibility:hidden;"></canvas>
+  
+  <script>
+    const foods = ['🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🥝','🍅','🥥','🥑','🍆','🥔','🥕','🌽','🌶️','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🌰',
+                   '🍞','🍞','🥐','🥖','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🥙','🧆','🥚','🍳','🥘','🍲','🥣','🥗','🍿','🧈','🧂',
+                   '🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🦀','🦞','🦐','🦑','🦪','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁',
+                   '🥧','🍫','🍬','🍭','🍮','🍯','🍼','🥛','☕','🍵','🍶','🍾','🍷','🍸','🍹','🍺','🍻','🥂','🥃','🥤','🧃','🧉','🧊'];
+    function getRandomFood() {
+      let index = Math.floor(Math.random() * foods.length);
+      return foods[index];
+    }  
+    
+    // Draw pretty animation on the source canvas
+    async function startDrawing() {
+      let cnv = document.getElementById("src");
+      var ctx = cnv.getContext('2d');
+     
+      ctx.fillStyle = "#fff5e6";
+      let width = cnv.width;
+      let height = cnv.height;
+      let cx = width / 2;
+      let cy = height / 2;
+      let r = Math.min(width, height) / 5;
+      
+      ctx.font = '30px Helvetica';
+      const text = getRandomFood() + "📹📷Hello WebCodecs 🎥🎞️" + getRandomFood();
+      const size = ctx.measureText(text).width;     
+     
+      let drawOneFrame = function (time) {
+        let angle = Math.PI * 2 * (time / 5000);
+        let scale = 1 + 0.3 * Math.sin(Math.PI * 2 * (time / 7000));
+        ctx.save();
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.scale(scale, scale);       
+      
+        ctx.fillStyle = "hsl(" + (angle * 40 ) + ",80%,50%)";
+        ctx.fillRect(-size / 2, 10, size, 25);
+        
+        ctx.fillStyle = 'black';
+        ctx.fillText(text, -size / 2, 0);        
+        
+        ctx.restore();        
+        window.requestAnimationFrame(drawOneFrame);
+      }
+      window.requestAnimationFrame(drawOneFrame);
+    }
+    
+    function startWorker() {
+      let worker = new Worker('video-worker.js', { name: "Video worker"});
+      worker.onmessage = function(e) {
+        // Recreate worker in case of an error
+        console.log('Worker error: ' + e.data);
+        worker.terminate();
+        //startWorker();
+      };      
+      
+      let codec = document.querySelector("input[name=\"codec\"]:checked").value;
+      let enc_hw = parseInt(document.querySelector("input[name=\"enc_hw\"]:checked").value);
+      let dec_hw = parseInt(document.querySelector("input[name=\"dec_hw\"]:checked").value);
+
+      // Capture animation track for the source canvas
+      let src_cnv = document.getElementById("src");
+      const fps = 20;
+      let stream = src_cnv.captureStream(fps);
+      const track = stream.getVideoTracks()[0]
+      media_processor = new MediaStreamTrackProcessor(track);
+      const reader = media_processor.readable;
+      
+      // Create a new destination canvas
+      const dst_cnv = document.createElement('canvas');
+      dst_cnv.width = src_cnv.width;
+      dst_cnv.height = src_cnv.height;
+      const dst = document.getElementById("dst");      
+      if (dst.firstChild)
+        dst.removeChild(dst.firstChild);
+      dst.appendChild(dst_cnv);
+      let offscreen = dst_cnv.transferControlToOffscreen();
+      worker.postMessage({
+        canvas : offscreen,
+        frame_source : reader,
+        fps : fps,
+        codec : codec,
+        enc_hw : enc_hw,
+        dec_hw : dec_hw
+      }, [offscreen, reader]);          
+    }
+   
+    function main(w, h) {
+      let src_cnv = document.getElementById("src");
+      src_cnv.width = w;
+      src_cnv.height = h;
+      let bt_coll = document.getElementsByTagName("button");
+      for (i = 0 ; i < bt_coll.length; i++) {
+        if (bt_coll[i].id != "btr") {
+          bt_coll[i].disabled = true;
+        }
+      }
+
+      if (!("VideoFrame" in window)) {
+        document.body.innerHTML = "<h1>WebCodecs API is not supported.</h1>";
+        return;
+      }
+
+      startDrawing();
+      startWorker();
+    }
+
+    function check_parameter() {
+      let result = location.href.indexOf("tc=")
+      if (result <= 0) {
+        return;   
+      }
+
+      if (location.href.indexOf("tc=lm21ann-enc-test-256") > 0) {
+        document.getElementById("bt1").disabled = true;
+        document.getElementById("bt2").disabled = true;
+        document.getElementById("bt4").disabled = true;
+        document.getElementById("codec_main").checked = true;
+        document.getElementById("codec_base").disabled = true;
+        document.getElementById("enc_hw_1").checked = true;
+        document.getElementById("enc_hw_0").disabled = true;
+        document.getElementById("dec_hw_1").disabled = true;
+        document.getElementById("dec_hw_0").disabled = true;
+      } else if (location.href.indexOf("tc=lm21ann-enc-dec-test-256") > 0) {
+        document.getElementById("bt1").disabled = true;
+        document.getElementById("bt2").disabled = true;
+        document.getElementById("bt4").disabled = true;
+        document.getElementById("codec_main").checked = true;
+        document.getElementById("codec_base").disabled = true;
+        document.getElementById("enc_hw_1").checked = true;
+        document.getElementById("enc_hw_0").disabled = true;
+        document.getElementById("dec_hw_1").checked = true;
+        document.getElementById("dec_hw_0").disabled = true;
+      } else if (location.href.indexOf("tc=lm21ann-enc-test-360") > 0) {
+        document.getElementById("bt2").disabled = true;
+        document.getElementById("bt3").disabled = true;
+        document.getElementById("bt4").disabled = true;
+        document.getElementById("codec_main").checked = true;
+        document.getElementById("codec_base").disabled = true;
+        document.getElementById("enc_hw_1").checked = true;
+        document.getElementById("enc_hw_0").disabled = true;
+        document.getElementById("dec_hw_1").disabled = true;
+        document.getElementById("dec_hw_0").disabled = true;
+      } else if (location.href.indexOf("tc=lm21ann-enc-test-368") > 0) {
+        document.getElementById("bt1").disabled = true;
+        document.getElementById("bt3").disabled = true;
+        document.getElementById("bt4").disabled = true;
+        document.getElementById("codec_main").checked = true;
+        document.getElementById("codec_base").disabled = true;
+        document.getElementById("enc_hw_1").checked = true;
+        document.getElementById("enc_hw_0").disabled = true;
+        document.getElementById("dec_hw_1").disabled = true;
+        document.getElementById("dec_hw_0").disabled = true;
+      }
+ 
+    }
+
+    check_parameter();
+    //document.body.onload = main;
+  </script>
+
+</body>
+
+</html>
