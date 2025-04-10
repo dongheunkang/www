@@ -33,6 +33,12 @@
     </label>
     <label>
       <input id="enc_hw_0" type="radio" name="enc_hw" value=0 checked> SW 
+    </label>
+    <label>
+      <input id="cbr_mode_1" type="radio" name="cbr_mode" value=1> CBR
+    </label>
+    <label>
+      <input id="cbr_mode_0" type="radio" name="cbr_mode" value=0 checked> VBR
     </label><br/>
     Decoder hardwareAcceleration:
     <label>
@@ -105,6 +111,7 @@
       let codec = document.querySelector("input[name=\"codec\"]:checked").value;
       let enc_hw = parseInt(document.querySelector("input[name=\"enc_hw\"]:checked").value);
       let dec_hw = parseInt(document.querySelector("input[name=\"dec_hw\"]:checked").value);
+      let cbr_mode = parseInt(document.querySelector("input[name=\"cbr_mode\"]:checked").value);
 
       // Capture animation track for the source canvas
       let src_cnv = document.getElementById("src");
@@ -129,7 +136,8 @@
         fps : fps,
         codec : codec,
         enc_hw : enc_hw,
-        dec_hw : dec_hw
+        dec_hw : dec_hw,
+        cbr : cbr_mode
       }, [offscreen, reader]);          
     }
    

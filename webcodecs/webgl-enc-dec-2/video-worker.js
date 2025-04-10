@@ -1,6 +1,7 @@
 let codec_string = "avc1.42001F";
 let enc_hw = false;
 let dec_hw = false;
+let cbr = false;
 
 function reportError(e) {
   // Report error to the main thread
@@ -16,15 +17,19 @@ function captureAndEncode(frame_source, cnv, fps, processChunk) {
     error: reportError
   };
 
-  const config = {
+  let config = {
     codec: codec_string,
     width: cnv.width,
     height: cnv.height,
-    //bitrate: 1000000,
     //avc : { format: "annexb" },
     framerate: fps,
     hardwareAcceleration : enc_hw ? "prefer-hardware" : "prefer-software",
   };
+
+  if (cbr) {
+    config.bitrate = 1000000;
+    config.bitrateMode = "constant";
+  }
 
   let encoder = new VideoEncoder(init);
   encoder.configure(config);  
@@ -115,6 +120,7 @@ self.onmessage = async function(e) {
   codec_string = e.data.codec;
   enc_hw = e.data.enc_hw;
   dec_hw = e.data.dec_hw;
+  cbr = e.data.cbr;
   
   main(frame_source, canvas, fps);
 }
