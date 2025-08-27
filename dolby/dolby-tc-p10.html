@@ -1,0 +1,241 @@
+<html>
+<head>
+<!--
+<script src="shaka-player.compiled.js"></script>
+-->
+<script src="shaka-player.compiled.debug.v4.15.9.js"></script>
+<script>
+var test_cases = [
+  [],
+  ['P10.0 DASH clear',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/clear/P10_25/dash.mpd'],
+  ['P10.1 DASH clear',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/clear/P10_1_25/dash.mpd',
+   './test_signals/clear/P10_1_25/dash-av1.mpd'],
+  ['P10.4 DASH clear',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/clear/P10_4_25/dash.mpd'],
+  ['P10.0 HLS clear',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/clear/P10_25/master.m3u8'],
+  ['P10.1 HLS clear',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/clear/P10_1_25/master.m3u8'],
+  ['P10.4 HLS clear',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/clear/P10_4_25/master.m3u8'],
+  ['P10.0 DASH cenc',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/cenc/P10_25/dash.mpd',
+   './test_signals/cenc/P10_25/dash.mpd'],
+  ['P10.1 DASH cenc',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/cenc/P10_1_25/dash.mpd',
+   './test_signals/cenc/P10_1_25/dash-av1.mpd'],
+  ['P10.4 DASH cenc',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/cenc/P10_4_25/dash.mpd'],
+  ['P10.0 DASH cbcs',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/cbcs/P10_25/dash.mpd'],
+  ['P10.1 DASH cbcs',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/cbcs/P10_1_25/dash.mpd'],
+  ['P10.4 DASH cbcs',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/cbcs/P10_4_25/dash.mpd'],
+  ['P5 DASH clear',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/clear/P5_25/dash.mpd'],
+  ['P5 HLS clear',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/clear/P5_25/master.m3u8'],
+  ['P5 DASH cenc',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/cenc/P5_25/dash.mpd'],
+  ['P5 DASH cbcs',
+   'https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit_1.0/Test_Signals/cbcs/P5_25/dash.mpd'],
+  []
+];
+var player = null;
+var serial_no = 0;
+var tc_id = 0;
+
+function run_tc(sno, tid) {
+  console.log("run_tc", sno, tid);
+  serial_no = sno;
+  tc_id = tid;
+  loadPlayer();
+}
+
+function loadPlayer() {
+  if (player) {
+		unloadPlayer(loadPlayer);
+    return;
+  }
+  trace.clearLog();
+  // Install built-in polyfills to patch browser incompatibilities.
+  shaka.polyfill.installAll();
+
+  // Check to see if the browser supports the basic APIs Shaka needs.
+  if (!shaka.Player.isBrowserSupported()) {
+    // This browser does not have the minimum set of APIs we need.
+    console.error('Browser not supported!');
+    return;
+  }
+
+  // Create a Player instance.
+  var video = document.getElementById('player');
+  player = new shaka.Player(video);
+
+  // Attach player to the window to make it easy to access in the JS console.
+  window.player = player;
+
+  // Listen for error events.
+  player.addEventListener('error', onErrorEvent);
+  var uri = test_cases[serial_no][tc_id];
+  // Try to load a manifest.
+  // This is an asynchronous process.
+
+  player.configure({
+    restrictions: {
+      minWidth: 640,
+      maxWidth: 1920 
+    }
+  });
+
+  if ((serial_no >= 7 && serial_no <= 12) || serial_no >= 15) {
+    player.configure({
+      streaming: {
+        retryParameters: { timeout: 1000000 }
+      },
+      drm: {
+        servers: { 'com.widevine.alpha': 'https://widevine-dash.ezdrm.com/proxy?pX=E8A6EE' }
+      }
+    });
+  }
+
+  player.load(uri).then(function() {
+    // This runs if the asynchronous load is successful.
+    console.log('The video has now been loaded!');
+  }).catch(onError);  // onError is executed if the asynchronous load fails.
+
+  document.getElementById('title').innerHTML = test_cases[serial_no][0] + " TC" + tc_id + " (shaka-player:" + shaka.Player.version + ")";
+  document.getElementById('mpd').innerHTML = uri;
+}
+
+function onErrorEvent(event) {
+  // Extract the shaka.util.Error object from the event.
+  console.log("onErrorEvent");
+  onError(event.detail);
+}
+
+function onError(error) {
+  // Log the error.
+  console.error('Error code', error.code, 'object', error);
+  trace.log('Error code', error.code, 'object', error);
+}
+
+function unloadPlayer(callback) {
+  window.player.destroy().then(function() {
+    player = null;
+    if (callback) callback();
+  }).catch(function(error) {
+    console.error("destroy error" + error);
+  });
+}
+
+</script>
+</head>
+<body style="background-color:white;margin:20px">
+<h1 id="title">Dolby Profile 10 OTT playback testing</h1>
+<div id="mpd" style="font-size:24px;"></div>
+<div id="video" style="position:absolute;top:400;left:1250;width:640;height:360;">
+<video id="player" width='100%' height='100%'>
+</div>
+<div id="output" class="output">
+  <pre style="font-size:20px;" id="info"></pre>
+  <pre style="font-size:18px;" id="log"></pre>
+</div>
+<div style="position:absolute;top:410;font-size:16px;">
+P10.0 DASH clear</br>
+<a href="#" onclick="run_tc(1,1)" type="button">Test vector</a> </br>
+P10.1 DASH clear</br>
+<a href="#" onclick="run_tc(2,1)" type="button">Test vector</a> |
+<a href="#" onclick="run_tc(2,2)" type="button">Test vector(av1)</a> </br>
+P10.4 DASH clear</br>
+<a href="#" onclick="run_tc(3,1)" type="button">Test vector</a> </br>
+P10.0 HLS clear</br>
+<a href="#" onclick="run_tc(4,1)" type="button">Test vector</a> </br>
+P10.1 HLS clear</br>
+<a href="#" onclick="run_tc(5,1)" type="button">Test vector</a> </br>
+P10.4 HLS clear</br>
+<a href="#" onclick="run_tc(6,1)" type="button">Test vector</a> </br>
+P10.0 DASH cenc</br>
+<a href="#" onclick="run_tc(7,1)" type="button">Test vector</a> |
+<a href="#" onclick="run_tc(7,2)" type="button">Test vector(fix)</a> </br>
+P10.1 DASH cenc</br>
+<a href="#" onclick="run_tc(8,1)" type="button">Test vector</a> |
+<a href="#" onclick="run_tc(8,2)" type="button">Test vector(av1)</a> </br>
+P10.4 DASH cenc</br>
+<a href="#" onclick="run_tc(9,1)" type="button">Test vector</a> </br>
+P10.0 DASH cbcs</br>
+<a href="#" onclick="run_tc(10,1)" type="button">Test vector</a> </br>
+P10.1 DASH cbcs</br>
+<a href="#" onclick="run_tc(11,1)" type="button">Test vector</a> </br>
+P10.4 DASH cbcs</br>
+<a href="#" onclick="run_tc(12,1)" type="button">Test vector</a> </br>
+<hr/>
+P5 DASH clear</br>
+<a href="#" onclick="run_tc(13,1)" type="button">Test vector</a> </br>
+P5 HLS clear</br>
+<a href="#" onclick="run_tc(14,1)" type="button">Test vector</a> </br>
+P5 DASH cenc</br>
+<a href="#" onclick="run_tc(15,1)" type="button">Test vector</a> </br>
+P5 DASH cbcs</br>
+<a href="#" onclick="run_tc(16,1)" type="button">Test vector</a> </br>
+<!-- reload -->
+</br>
+<a href="#" onclick="location.reload()" type="button">Reload Test Page</a> </br>
+</div>
+<script>
+var trace = {
+  log: function() {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    var total_lines = (document.querySelector('#log').textContent.match(/\n/g) || '').length + 1;
+    if (total_lines > 11)
+      document.querySelector('#log').textContent = '';
+
+    document.querySelector('#log').textContent = line + '\n' + document.querySelector('#log').textContent;
+  },
+
+  clearLog: function() {
+    document.querySelector('#log').textContent = '';
+  },
+};
+
+function timeupdate_handler() {
+  document.querySelector('#info').textContent = "currentTime: " + document.querySelector('#player').currentTime;
+}
+
+function event_handler(event) {
+  trace.log(event.type);
+}
+
+function addEventsHandler() {
+  var mediaevent_ = ["loadstart","suspend","abort","emptied","stalled",
+      "loadedmetadata","loadeddata","canplay","canplaythrough",
+      "playing","waiting","seeking","seeked","ended","durationchange",
+      "play","pause","ratechange","volumechange"];
+  var i = 0;
+  do {
+    var keyname = mediaevent_[i++];
+    document.querySelector('#player').addEventListener(keyname, event_handler, false);
+  } while (i < mediaevent_.length);
+}
+
+function load() {
+  document.querySelector('#player').setAttribute("autoplay", "");
+  document.querySelector('#player').setAttribute("controls", "");
+  document.querySelector('#player').addEventListener("timeupdate", timeupdate_handler);
+  addEventsHandler();
+}
+
+function play() {
+  document.querySelector('#player').play();
+}
+
+load();
+</script>
+</body>
+</html>
