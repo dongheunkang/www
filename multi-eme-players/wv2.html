@@ -1,0 +1,167 @@
+<html>
+<head>
+<script src="shaka-player.compiled.4.5.0.js"></script>
+<script>
+var start_time = 0
+function loadPlayer(id) {
+  // Install built-in polyfills to patch browser incompatibilities.
+  shaka.polyfill.installAll();
+
+  // Check to see if the browser supports the basic APIs Shaka needs.
+  if (!shaka.Player.isBrowserSupported()) {
+    // This browser does not have the minimum set of APIs we need.
+    console.error('Browser not supported!');
+    return;
+  }
+
+  // Create a Player instance.
+  var video = document.getElementById('player' + id);
+  var player = new shaka.Player(video);
+
+  var options = {};
+  options.htmlMediaOption= {};
+  options.htmlMediaOption.useMediaPlayerManager = false;
+  options.option = {};
+  options.option.useSoftwareAudioDecoder = true;
+
+  // id 1 : main_video(default), id 2 : sub_video
+  if (id == 2) {
+    options.option.avSink = {};
+    options.option.avSink.audioSink = {};
+    options.option.avSink.videoSink = {};
+    options.option.avSink.videoSink.type = "sub_video";
+  }
+
+  // Set hint informations(w, h, fps) to platform for resource
+  options.option.adaptiveStreaming = {}
+  options.option.adaptiveStreaming.maxWidth = 960;
+  options.option.adaptiveStreaming.maxHeight = 540;
+  options.option.adaptiveStreaming.maxFrameRate = 30;
+
+  // Add listener for audio sink
+  video.mediaOption = JSON.stringify(options);
+  video.addEventListener('click', function() { setSink(id); });
+
+  var uri = "https://media.axprod.net/TestVectors/Dash/protected_dash_1080p_h264_singlekey/manifest.mpd";
+  {
+    // set widevine key
+    player.configure({
+      restrictions: {
+        maxWidth: 960,
+        maxHeight: 540
+      },
+      drm: {
+        servers: {
+          'com.widevine.alpha': 'https://drm-widevine-licensing.axtest.net/AcquireLicense'
+        }
+      }
+    });
+    player.getNetworkingEngine().registerRequestFilter(function(type, request) {
+      // Only add headers to license requests:
+      if (type == shaka.net.NetworkingEngine.RequestType.LICENSE) {
+        // This is the specific header name and value the server wants:
+        request.headers['X-AxDRM-Message'] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJ2ZXJzaW9uIjogMSwKICAiY29tX2tleV9pZCI6ICI2OWU1NDA4OC1lOWUwLTQ1MzAtOGMxYS0xZWI2ZGNkMGQxNGUiLAogICJtZXNzYWdlIjogewogICAgInR5cGUiOiAiZW50aXRsZW1lbnRfbWVzc2FnZSIsCiAgICAidmVyc2lvbiI6IDIsCiAgICAibGljZW5zZSI6IHsKICAgICAgImFsbG93X3BlcnNpc3RlbmNlIjogdHJ1ZQogICAgfSwKICAgICJjb250ZW50X2tleXNfc291cmNlIjogewogICAgICAiaW5saW5lIjogWwogICAgICAgIHsKICAgICAgICAgICJpZCI6ICI0MDYwYTg2NS04ODc4LTQyNjctOWNiZi05MWFlNWJhZTFlNzIiLAogICAgICAgICAgImVuY3J5cHRlZF9rZXkiOiAid3QzRW51dVI1UkFybjZBRGYxNkNCQT09IiwKICAgICAgICAgICJ1c2FnZV9wb2xpY3kiOiAiUG9saWN5IEEiCiAgICAgICAgfQogICAgICBdCiAgICB9LAogICAgImNvbnRlbnRfa2V5X3VzYWdlX3BvbGljaWVzIjogWwogICAgICB7CiAgICAgICAgIm5hbWUiOiAiUG9saWN5IEEiLAogICAgICAgICJwbGF5cmVhZHkiOiB7CiAgICAgICAgICAibWluX2RldmljZV9zZWN1cml0eV9sZXZlbCI6IDE1MCwKICAgICAgICAgICJwbGF5X2VuYWJsZXJzIjogWwogICAgICAgICAgICAiNzg2NjI3RDgtQzJBNi00NEJFLThGODgtMDhBRTI1NUIwMUE3IgogICAgICAgICAgXQogICAgICAgIH0KICAgICAgfQogICAgXQogIH0KfQ.l8PnZznspJ6lnNmfAE9UQV532Ypzt1JXQkvrk8gFSRw";
+      }
+    });
+  }
+
+  // Listen for error events.
+  player.addEventListener('error', onErrorEvent);
+
+  start_time = (id - 1) * 100;
+  // Try to load a manifest.
+  // This is an asynchronous process.
+  player.load(uri, start_time).then(function() {
+    // This runs if the asynchronous load is successful.
+    console.log('The video has now been loaded!');
+    document.querySelector('#player'+id).play();
+  }).catch(onError);  // onError is executed if the asynchronous load fails.
+}
+
+function onErrorEvent(event) {
+  // Extract the shaka.util.Error object from the event.
+  onError(event.detail);
+}
+
+function onError(error) {
+  // Log the error.
+  console.error('Error code', error.code, 'object', error);
+  trace.log('Error code', error.code, 'object', error);
+}
+
+function unloadPlayer(callback) {
+  window.player.destroy().then(function() {
+    if (callback) callback();
+  }).catch(function(error) {
+    console.error("destroy error" + error);
+  });
+}
+
+</script>
+</head>
+<body style="background-color:white;">
+<h1>Test MSE multi encrypted contents (widevine: main_video + playready: sub_video)</h1>
+<div id="video">
+<video loop id="player1" width='640px' height='360px' style="background-color:black;"></video>
+<video loop id="player2" width='640px' height='360px' style="background-color:black;"></video></br>
+</div>
+<div id="output" class="output">
+  <pre style="font-size:22px;" id="log"></pre>
+</div>
+<script>
+var previous_snd_src = 0;
+
+var trace = {
+  log: function() {
+    var line = Array.prototype.slice.call(arguments).map(function(argument) {
+      return typeof argument === 'string' ? argument : JSON.stringify(argument);
+    }).join(' ');
+
+    document.querySelector('#log').textContent += line + '\n';
+  },
+
+  clearLog: function() {
+    document.querySelector('#log').textContent = '';
+  },
+};
+
+function setAudioSink(id, connected) {
+  var vid = document.getElementById("player"+id);
+  var msg = {};
+  msg.command = "SetSink";
+  msg.parameter = {};
+  msg.parameter.audioSink = {};
+  if (connected)
+    msg.parameter.audioSink.type = "main_sound";
+  if (vid.send(JSON.stringify(msg))) {
+    console.log("id:" + id + " true : " + JSON.stringify(msg));
+  } else {
+    console.error("id:" + id + "false : send() fail!");
+  }
+}
+
+function setSink(id) {
+  if (previous_snd_src == id)
+    return;
+
+  trace.log("setSink("+id+")");
+  if (previous_snd_src)
+    setAudioSink(previous_snd_src, false);
+
+  setAudioSink(id, true);
+  previous_snd_src = id;
+}
+
+function load() {
+  loadPlayer(1);
+  loadPlayer(2);
+  trace.log("load");
+}
+
+function test() {
+  load();
+}
+test();
+</script>
+</body>
+</html>
