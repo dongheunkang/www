@@ -1,6 +1,6 @@
 <html>
 <body style="background-color:white;">
-<h3>WebMedia Test EME VP9 profile capabilities</h3>
+<h3>WebMedia Test EME VP9/AV1 profile capabilities</h3>
 <div id="output" class="output">
   <pre style="font-size:16px;" id="log"></pre>
 </div>
@@ -20,10 +20,15 @@ var trace = {
   },
 };
 
-var capabilities_expected_true = [
+var capabilities_expected_true_vp9 = [
   'video/webm; codecs="vp9"',
   'video/webm; codecs="vp9.2"',
   'video/webm; codecs="vp09.02.10.08"'
+];
+
+var capabilities_expected_true_av1 = [
+  ['video/mp4; codecs="av01.0.31M.10.0.111.09.16.09.0"', 'com.widevine.alpha'],
+  ['video/mp4; codecs="av01.0.31M.10.0.111.09.16.09.0"', 'com.microsoft.playready'],
 ];
 
 async function query() {
@@ -31,7 +36,7 @@ async function query() {
   trace.log('-----------------------------------------');
   trace.log('EME VP9 profile Case (expected True)');
   trace.log('-----------------------------------------');
-  for (var data of capabilities_expected_true) {
+  for (var data of capabilities_expected_true_vp9) {
     try {
       mksa = await navigator.requestMediaKeySystemAccess('com.widevine.alpha', 
         [{ initDataTypes: ['webm'], videoCapabilities: [{ contentType: data }]}]
@@ -43,6 +48,24 @@ async function query() {
     } catch(error) {
       trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + data + "')");
       trace.log("=> Not Suppored ("+error+")");
+      fail_count += 1;
+    }
+  }
+  trace.log('--------------------------------------------------------------');
+  trace.log('Support AV1 (expected True)');
+  trace.log('--------------------------------------------------------------');
+  for (var data of capabilities_expected_true_av1) {
+    try {
+      mksa = await navigator.requestMediaKeySystemAccess(data[1],
+        [{ initDataTypes: ['cenc'], videoCapabilities: [{ contentType: data[0] }]}]
+      );
+      if (mksa) {
+        trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + data[0] + "')");
+        trace.log("=> Supported " + data[1] + "(videoCapabilities:" +JSON.stringify(mksa.getConfiguration().videoCapabilities) + ")");
+      }
+    } catch(error) {
+      trace.log("navigator.requestMediaKeySystemAccess(keysystem, '" + data + "')");
+      trace.log("=> Not Suppored com.widevine.alpha ("+error+")");
       fail_count += 1;
     }
   }
