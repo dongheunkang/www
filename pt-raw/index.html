@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pointerrawupdate 테스트</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
+        #target {
+            width: 100%;
+            height: 300px;
+            background-color: #f0f0f0;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            touch-action: none; /* 브라우저 기본 제스처 방지 */
+        }
+        .stats { display: flex; gap: 20px; margin-top: 20px; }
+        .stat-box {
+            padding: 15px;
+            border-radius: 8px;
+            flex: 1;
+            text-align: center;
+        }
+        #raw-box { background-color: #e3f2fd; border: 1px solid #2196f3; }
+        #move-box { background-color: #f1f8e9; border: 1px solid #4caf50; }
+        .warning { color: red; font-weight: bold; display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>pointerrawupdate 이벤트 테스트</h1>
+    <p id="secure-check" class="warning">⚠️ 이 페이지는 보안 컨텍스트(HTTPS/localhost)가 아니므로 이벤트가 발생하지 않을 수 있습니다.</p>
+    
+    <div id="target">
+        여기에 마우스를 움직이거나 터치하세요
+    </div>
+
+    <div class="stats">
+        <div id="raw-box" class="stat-box">
+            <h3>pointerrawupdate</h3>
+            <p>발생 횟수: <span id="raw-count">0</span></p>
+            <p>좌표: <span id="raw-pos">-</span></p>
+        </div>
+        <div id="move-box" class="stat-box">
+            <h3>pointermove</h3>
+            <p>발생 횟수: <span id="move-count">0</span></p>
+            <p>좌표: <span id="move-pos">-</span></p>
+        </div>
+    </div>
+
+    <script>
+        // 보안 컨텍스트 확인 [2]
+        if (!window.isSecureContext) {
+            document.getElementById('secure-check').style.display = 'block';
+        }
+
+        const target = document.getElementById('target');
+        const rawCountEl = document.getElementById('raw-count');
+        const moveCountEl = document.getElementById('move-count');
+        const rawPosEl = document.getElementById('raw-pos');
+        const movePosEl = document.getElementById('move-pos');
+
+        let rawCount = 0;
+        let moveCount = 0;
+
+        // pointerrawupdate 이벤트 리스너: 고빈도 업데이트용 [2], [3]
+        target.addEventListener('pointerrawupdate', (e) => {
+            rawCount++;
+            rawCountEl.textContent = rawCount;
+            rawPosEl.textContent = `${Math.round(e.clientX)}, ${Math.round(e.clientY)}`;
+            
+            // 병합된 이벤트 확인 가능 [4]
+            const coalesced = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+            if (coalesced.length > 1) {
+                console.log(`병합된 이벤트 수: ${coalesced.length}`);
+            }
+        });
+
+        // 일반 pointermove 이벤트 리스너: 비교용 [5], [1]
+        target.addEventListener('pointermove', (e) => {
+            moveCount++;
+            moveCountEl.textContent = moveCount;
+            movePosEl.textContent = `${Math.round(e.clientX)}, ${Math.round(e.clientY)}`;
+        });
+
+        // 리셋 버튼 기능 (필요 시 콘솔에서 rawCount = 0 실행)
+        target.addEventListener('pointerdown', () => {
+            rawCount = 0;
+            moveCount = 0;
+            rawCountEl.textContent = '0 (리셋됨)';
+            moveCountEl.textContent = '0 (리셋됨)';
+        });
+    </script>
+</body>
+</html>
