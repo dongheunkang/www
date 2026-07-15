@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>WebCodecs Codec Decode Test – H.264 / HEVC / AV1 / VP8 / VP9</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 1080px; overflow: hidden; }
+    body {
+      font-family: sans-serif;
+      background: #fff;
+      display: flex;
+      align-items: stretch;
+    }
+    #left-panel {
+      width: 860px;
+      flex-shrink: 0;
+      padding: 16px;
+      overflow-y: auto;
+      height: 1080px;
+    }
+    #right-panel {
+      flex: 1;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 { font-size: 1.2em; margin-bottom: 16px; }
+    h2 { font-size: 1em; margin: 0 0 10px; }
+    section { border: 1px solid #ccc; border-radius: 4px; padding: 14px; margin-bottom: 16px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th, td { padding: 6px 10px; border: 1px solid #ddd; text-align: left; font-size: 0.9em; }
+    th { background: #f5f5f5; }
+    code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-size: 0.85em; }
+    .ok  { color: #1a7a1a; font-weight: bold; }
+    .ng  { color: #cc0000; font-weight: bold; }
+    .pending { color: #888; }
+    label { margin-right: 16px; cursor: pointer; }
+    input[type=text] { padding: 4px 6px; border: 1px solid #bbb; border-radius: 3px; }
+    button { padding: 6px 16px; cursor: pointer; margin-right: 8px; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    #canvas { border: 1px solid #444; display: block; width: 960px; height: 540px; }
+    .codec-tag { display: inline-block; padding: 2px 6px; border-radius: 3px;
+                 font-size: 0.8em; font-weight: bold; color: #fff; margin-right: 4px; }
+    .tag-h264 { background: #2c3e50; }
+    .tag-hevc { background: #8e44ad; }
+    .tag-av1  { background: #16a085; }
+    .tag-vp8  { background: #e67e22; }
+    .tag-vp9  { background: #2980b9; }
+  </style>
+</head>
+<body>
+<div id="left-panel">
+  <h1>WebCodecs Codec Decode Test — H.264 / HEVC / AV1 / VP8 / VP9</h1>
+
+  <!-- ── Section 1: isConfigSupported ── -->
+  <section>
+    <h2>1. Codec Support Detection <code>VideoDecoder.isConfigSupported()</code></h2>
+    <button id="btn-check">Check All Codecs</button>
+    <table id="tbl-support">
+      <thead>
+        <tr>
+          <th>Codec</th>
+          <th>Profile</th>
+          <th>Codec String</th>
+          <th>Resolution</th>
+          <th>Support</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-support">
+        <tr><td colspan="5" class="pending">Press "Check All Codecs" to run.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── Section 2: Decode Test ── -->
+  <section>
+    <h2>2. Decode Test</h2>
+
+    <p>Bundled test clips:</p>
+    <table style="margin-bottom:10px;">
+      <thead><tr><th>Codec</th><th>Resolution</th><th>Container</th><th></th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="codec-tag tag-h264">H.264</span></td>
+          <td>640×360</td><td>fMP4</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_h264_360p.mp4">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-h264">H.264</span></td>
+          <td>1280×720</td><td>fMP4</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_h264_720p.mp4">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-hevc">HEVC</span></td>
+          <td>640×360</td><td>fMP4</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_hevc_360p.mp4">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-hevc">HEVC</span></td>
+          <td>1280×720</td><td>fMP4</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_hevc_720p.mp4">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-av1">AV1</span></td>
+          <td>640×360</td><td>IVF</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_av1_360p.ivf">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-av1">AV1</span></td>
+          <td>1280×720</td><td>IVF</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_av1_720p.ivf">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-vp8">VP8</span></td>
+          <td>640×360</td><td>IVF</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_vp8_360p.ivf">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-vp8">VP8</span></td>
+          <td>1280×720</td><td>IVF</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_vp8_720p.ivf">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-vp9">VP9</span></td>
+          <td>640×360</td><td>IVF</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_vp9_360p.ivf">▶ Test</button></td>
+        </tr>
+        <tr>
+          <td><span class="codec-tag tag-vp9">VP9</span></td>
+          <td>1280×720</td><td>IVF</td>
+          <td><button class="btn-clip" data-uri="videos/bbb_vp9_720p.ivf">▶ Test</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Custom file:
+      <input type="file" id="file-input" accept=".mp4,.m4v,.fmp4,.ivf,.webm">
+      &nbsp; or URL: &nbsp;
+      <input type="text" id="url-input" size="40" placeholder="http://server/video.mp4 or .ivf">
+    </p>
+
+    <p>
+      Renderer:
+      <label><input type="radio" name="renderer" value="2d" checked> 2D Canvas</label>
+      <label><input type="radio" name="renderer" value="webgl"> WebGL</label>
+    </p>
+
+    <p>
+      <button id="btn-start" disabled>▶ Start Decode</button>
+      <button onclick="location.reload()">↺ Reload</button>
+    </p>
+
+    <table>
+      <tr><th style="width:80px;">Codec</th>  <td id="st-codec">–</td></tr>
+      <tr><th>Fetch</th>   <td id="st-fetch">–</td></tr>
+      <tr><th>Demux</th>   <td id="st-demux">–</td></tr>
+      <tr><th>Decode</th>  <td id="st-decode">–</td></tr>
+      <tr><th>Render</th>  <td id="st-render">–</td></tr>
+    </table>
+  </section>
+
+</div><!-- /#left-panel -->
+
+<div id="right-panel">
+  <canvas id="canvas" width="960" height="540"></canvas>
+</div><!-- /#right-panel -->
+
+  <script type="module">
+    // ─────────────────────────────────────────────────────────────────
+    // Section 1 – Codec Support Check
+    // ─────────────────────────────────────────────────────────────────
+    const CODEC_CHECKS = [
+      // H.264
+      { tag: 'h264', label: 'H.264', profile: 'High 4.1',      str: 'avc1.64002A',   w: 1920, h: 1080 },
+      { tag: 'h264', label: 'H.264', profile: 'Main 4.0',      str: 'avc1.4D0028',   w: 1920, h: 1080 },
+      { tag: 'h264', label: 'H.264', profile: 'Baseline 3.0',  str: 'avc1.42001E',   w: 1280, h: 720  },
+      // HEVC / H.265
+      { tag: 'hevc', label: 'HEVC',  profile: 'Main',          str: 'hvc1.1.6.L93.B0', w: 1920, h: 1080 },
+      { tag: 'hevc', label: 'HEVC',  profile: 'Main 10',       str: 'hvc1.2.4.L93.B0', w: 1920, h: 1080 },
+      { tag: 'hevc', label: 'HEVC',  profile: 'Main (hev1)',   str: 'hev1.1.6.L93.B0', w: 1920, h: 1080 },
+      // AV1
+      { tag: 'av1',  label: 'AV1',   profile: 'Main 8-bit',    str: 'av01.0.04M.08', w: 1920, h: 1080 },
+      { tag: 'av1',  label: 'AV1',   profile: 'Main 10-bit',   str: 'av01.0.04M.10', w: 1920, h: 1080 },
+      // VP8
+      { tag: 'vp8',  label: 'VP8',   profile: 'Any',           str: 'vp8',           w: 1280, h: 720  },
+      { tag: 'vp8',  label: 'VP8',   profile: 'Any 1080p',     str: 'vp8',           w: 1920, h: 1080 },
+      // VP9
+      { tag: 'vp9',  label: 'VP9',   profile: 'Profile 0',     str: 'vp09.00.41.08', w: 1920, h: 1080 },
+      { tag: 'vp9',  label: 'VP9',   profile: 'Profile 0 720p',str: 'vp09.00.31.08', w: 1280, h: 720  },
+      { tag: 'vp9',  label: 'VP9',   profile: 'Profile 2',     str: 'vp09.02.41.10', w: 1920, h: 1080 },
+    ];
+
+    document.getElementById('btn-check').addEventListener('click', async () => {
+      const tbody = document.getElementById('tbody-support');
+      tbody.innerHTML = '';
+      for (const c of CODEC_CHECKS) {
+        const tr = document.createElement('tr');
+        // Show pending first
+        tr.innerHTML = `
+          <td><span class="codec-tag tag-${c.tag}">${c.label}</span></td>
+          <td>${c.profile}</td>
+          <td><code>${c.str}</code></td>
+          <td>${c.w}×${c.h}</td>
+          <td class="pending">checking…</td>`;
+        tbody.appendChild(tr);
+
+        // Run check asynchronously and update row
+        VideoDecoder.isConfigSupported({ codec: c.str, codedWidth: c.w, codedHeight: c.h })
+          .then(result => {
+            const cls  = result.supported ? 'ok' : 'ng';
+            const text = result.supported ? '✓ Supported' : '✗ Not supported';
+            tr.querySelector('td:last-child').className = cls;
+            tr.querySelector('td:last-child').textContent = text;
+          })
+          .catch(err => {
+            tr.querySelector('td:last-child').className = 'ng';
+            tr.querySelector('td:last-child').textContent = `✗ Error: ${err.message}`;
+          });
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────
+    // Section 2 – Decode Test
+    // ─────────────────────────────────────────────────────────────────
+    const fileInput = document.getElementById('file-input');
+    const urlInput  = document.getElementById('url-input');
+    const btnStart  = document.getElementById('btn-start');
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) btnStart.disabled = false;
+    });
+    urlInput.addEventListener('input', () => {
+      if (fileInput.files.length === 0)
+        btnStart.disabled = urlInput.value.trim() === '';
+    });
+
+    const statusCells = {
+      codec:  document.getElementById('st-codec'),
+      fetch:  document.getElementById('st-fetch'),
+      demux:  document.getElementById('st-demux'),
+      decode: document.getElementById('st-decode'),
+      render: document.getElementById('st-render'),
+    };
+
+    function setStatus(data) {
+      for (const key in data) {
+        if (statusCells[key]) statusCells[key].textContent = data[key];
+      }
+    }
+
+    let activeWorker = null;
+
+    function launchDecode(dataUri) {
+      // Reset status
+      for (const cell of Object.values(statusCells)) cell.textContent = '–';
+
+      // Terminate previous worker
+      if (activeWorker) {
+        activeWorker.terminate();
+        activeWorker = null;
+      }
+
+      // transferControlToOffscreen() can only be called once per canvas element.
+      // Replace the canvas with a fresh element so each test run works correctly.
+      const oldCanvas = document.getElementById('canvas');
+      const newCanvas = document.createElement('canvas');
+      newCanvas.id     = 'canvas';
+      newCanvas.width  = 960;
+      newCanvas.height = 540;
+      newCanvas.style.cssText = oldCanvas.style.cssText;
+      oldCanvas.replaceWith(newCanvas);
+
+      const offscreen     = newCanvas.transferControlToOffscreen();
+      const rendererName  = document.querySelector('input[name="renderer"]:checked').value;
+      const worker        = new Worker('./worker.js');
+      activeWorker = worker;
+      worker.addEventListener('message', e => setStatus(e.data));
+      worker.postMessage({ dataUri, rendererName, canvas: offscreen }, [offscreen]);
+    }
+
+    // Bundled clip buttons
+    document.querySelectorAll('.btn-clip').forEach(btn => {
+      btn.addEventListener('click', () => launchDecode(btn.dataset.uri));
+    });
+
+    // Manual start button
+    btnStart.addEventListener('click', () => {
+      let dataUri;
+      if (fileInput.files.length > 0) {
+        dataUri = URL.createObjectURL(fileInput.files[0]);
+      } else {
+        dataUri = urlInput.value.trim();
+      }
+      if (!dataUri) return;
+      launchDecode(dataUri);
+    });
+  </script>
+</body>
+</html>
