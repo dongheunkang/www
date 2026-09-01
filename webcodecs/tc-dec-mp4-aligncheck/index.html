@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<title>WebCodecs Bottom-Edge Alignment Check &mdash; AV1 / H.264 (540 / 544 / 512)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #0b0e13; color: #cde;
+               font-family: monospace; overflow: hidden; }
+  #wrap { display: flex; flex-direction: column; height: 100vh; }
+  #bar { display: flex; align-items: center; gap: 14px; padding: 10px 16px;
+         background: #121722; border-bottom: 1px solid #263143; flex: 0 0 auto;
+         flex-wrap: wrap; }
+  #bar b { color: #00d4ff; }
+  .group { display: flex; align-items: center; gap: 6px; }
+  .group .glabel { color: #7f93ab; font-size: 0.85em; }
+  .group button { font-family: monospace; font-size: 1em; padding: 6px 12px;
+                  background: #223; color: #cde; border: 1px solid #456;
+                  border-radius: 5px; cursor: pointer; }
+  .group button.active { background: #2c5364; color: #00d4ff; border-color: #00d4ff; }
+  #hud { margin-left: auto; white-space: pre; font-size: 0.95em; color: #9fb; }
+  #stage { flex: 1 1 auto; display: flex; gap: 16px; padding: 16px;
+           min-height: 0; }
+  .panel { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+  .panel .cap { color: #7f93ab; font-size: 0.85em; }
+  #main-panel { flex: 1 1 60%; }
+  #zoom-panel { flex: 1 1 40%; }
+  canvas { background: #000; border: 1px solid #263143; image-rendering: pixelated; }
+  #main { width: 100%; height: auto; max-height: calc(100vh - 170px);
+          object-fit: contain; }
+  #zoom { width: 100%; height: auto; }
+  #status { font-size: 0.85em; color: #8aa; padding: 4px 16px 10px; }
+  #status span { color: #cde; }
+  .err { color: #ff6b6b !important; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="bar">
+    <span>WebCodecs decode &mdash; <b id="lbl">-</b></span>
+    <div class="group" id="codec-group"><span class="glabel">codec</span></div>
+    <div class="group" id="size-group"><span class="glabel">height</span></div>
+    <span id="hud">idle</span>
+  </div>
+  <div id="stage">
+    <div class="panel" id="main-panel">
+      <span class="cap">decoded frame (native resolution)</span>
+      <canvas id="main" width="960" height="540"></canvas>
+    </div>
+    <div class="panel" id="zoom-panel">
+      <span class="cap">bottom 16 rows &times;8 &mdash; magenta line = last visible row; noise at/above it = HW alignment corruption (AV1 540 suspect, H.264 clean control)</span>
+      <canvas id="zoom" width="960" height="128"></canvas>
+    </div>
+  </div>
+  <div id="status">
+    fetch <span id="st-fetch">-</span> &nbsp;|&nbsp;
+    demux <span id="st-demux">-</span> &nbsp;|&nbsp;
+    decode <span id="st-decode">-</span> &nbsp;|&nbsp;
+    render <span id="st-render">-</span>
+  </div>
+</div>
+
+<script src="mp4box.all.min.js"></script>
+<script src="demuxer_mp4.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // Reuse the existing aligncheck clips (no re-encode). Height 540 is a mult of
+  // 4 only (suspect), 544 is a mult of 16/32, 512 is a mult of 64. AV1 carries
+  // 540 exactly in-band; H.264 codes at a 16-aligned height (544) with a
+  // conformance crop to 540, so it is the clean control. Both are MP4, so a
+  // single MP4Box demuxer handles them.
+  var BASE = './';
+  var CODECS = [
+    { key: 'av1',  label: 'AV1' },
+    { key: 'h264', label: 'H.264' }
+  ];
+  var SIZES = [540, 544, 512];
+
+  var STRIP = 16;   // bottom rows shown in the zoom panel
+  var ZOOM = 8;     // vertical magnification of the strip
+
+  var main = document.getElementById('main');
+  var zoom = document.getElementById('zoom');
+  var mctx = main.getContext('2d');
+  var zctx = zoom.getContext('2d');
+  var lbl = document.getElementById('lbl');
+  var hud = document.getElementById('hud');
+  var codecGroup = document.getElementById('codec-group');
+  var sizeGroup = document.getElementById('size-group');
+  var st = {
+    fetch: document.getElementById('st-fetch'),
+    demux: document.getElementById('st-demux'),
+    decode: document.getElementById('st-decode'),
+    render: document.getElementById('st-render')
+  };
+
+  function setStatus(key, msg) {
+    if (st[key]) {
+      st[key].textContent = msg;
+      st[key].classList.toggle('err', /error|HTTP|unsupported/i.test(msg));
+    }
+  }
+
+  var ci = 0, si = 0;       // selected codec / size index
+  var session = 0;          // bumped on each (re)load to invalidate old async work
+  var chunks = [];          // stored demuxed chunks for looping playback
+  var config = null;
+  var decoder = null;
+  var renderQ = [];
+  var feedIdx = 0;
+  var playT0 = null;
+  var flushing = false;
+  var fedAll = false;
+  var rendered = 0;
+  var raf = 0;
+
+  window.test_result = { codec: null, width: 0, height: 0,
+                         decodedFrames: 0, error: null };
+
+  function srcFor(c, s) { return BASE + c.key + '_960x' + s + '.mp4'; }
+
+  function reconstruct(c) {
+    return new EncodedVideoChunk({
+      type: c.type, timestamp: c.timestamp, duration: c.duration, data: c.data
+    });
+  }
+
+  function draw(frame) {
+    var W = frame.displayWidth, H = frame.displayHeight;
+    if (main.width !== W || main.height !== H) { main.width = W; main.height = H; }
+    mctx.drawImage(frame, 0, 0, W, H);
+
+    var strip = Math.min(STRIP, H);
+    if (zoom.width !== W || zoom.height !== strip * ZOOM) {
+      zoom.width = W; zoom.height = strip * ZOOM;
+    }
+    zctx.imageSmoothingEnabled = false;
+    zctx.drawImage(frame, 0, H - strip, W, strip, 0, 0, W, strip * ZOOM);
+  }
+
+  function stopPlayback() {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    while (renderQ.length) { try { renderQ.shift().close(); } catch (e) {} }
+    if (decoder && decoder.state !== 'closed') { try { decoder.close(); } catch (e) {} }
+    decoder = null;
+  }
+
+  function startDecoder(mySession) {
+    decoder = new VideoDecoder({
+      output: function (frame) {
+        if (mySession !== session) { frame.close(); return; }
+        renderQ.push(frame);
+      },
+      error: function (e) {
+        if (mySession !== session) return;
+        setStatus('decode', 'error: ' + e.message);
+        window.test_result.error = String(e.message || e);
+      }
+    });
+    decoder.configure(config);
+    setStatus('decode', 'configured ' + config.codec);
+    feedIdx = 0; playT0 = null; flushing = false; fedAll = false;
+    raf = requestAnimationFrame(function (now) { pump(now, mySession); });
+  }
+
+  function pump(now, mySession) {
+    if (mySession !== session) return;
+
+    // Backpressure: keep the decoder fed but bound outstanding frames.
+    while (feedIdx < chunks.length && decoder.decodeQueueSize < 6 &&
+           renderQ.length < 6) {
+      decoder.decode(reconstruct(chunks[feedIdx++]));
+    }
+    if (feedIdx >= chunks.length && !flushing) {
+      flushing = true;
+      decoder.flush().then(function () {
+        if (mySession === session) fedAll = true;
+      }).catch(function () {});
+    }
+
+    // Render paced to the frames' own timestamps (real-time playback).
+    if (renderQ.length) {
+      if (playT0 === null) playT0 = now - renderQ[0].timestamp / 1000;
+      while (renderQ.length &&
+             (now - playT0) >= renderQ[0].timestamp / 1000) {
+        var f = renderQ.shift();
+        draw(f);
+        f.close();
+        rendered++;
+        window.test_result.decodedFrames = rendered;
+      }
+      setStatus('render', rendered + ' frames');
+      hud.textContent = config.codec + '  ' + main.width + 'x' + main.height +
+                        '  f=' + rendered + '  q=' + decoder.decodeQueueSize;
+    }
+
+    // Loop when everything has been fed, flushed and displayed.
+    if (fedAll && renderQ.length === 0 && feedIdx >= chunks.length) {
+      try { decoder.close(); } catch (e) {}
+      startDecoder(mySession);   // replay
+      return;
+    }
+    raf = requestAnimationFrame(function (t) { pump(t, mySession); });
+  }
+
+  function load() {
+    var c = CODECS[ci], s = SIZES[si];
+    var src = srcFor(c, s);
+    var mySession = ++session;
+
+    stopPlayback();
+    chunks = []; config = null; renderQ = []; rendered = 0;
+    window.test_result = { codec: null, width: 0, height: 0,
+                           decodedFrames: 0, error: null };
+
+    lbl.textContent = c.label + '  960x' + s;
+    Array.prototype.forEach.call(codecGroup.querySelectorAll('button'), function (b, k) {
+      b.className = (k === ci) ? 'active' : '';
+    });
+    Array.prototype.forEach.call(sizeGroup.querySelectorAll('button'), function (b, k) {
+      b.className = (k === si) ? 'active' : '';
+    });
+    ['fetch', 'demux', 'decode', 'render'].forEach(function (k) {
+      setStatus(k, 'started');
+    });
+    mctx.clearRect(0, 0, main.width, main.height);
+    zctx.clearRect(0, 0, zoom.width, zoom.height);
+
+    if (typeof VideoDecoder === 'undefined') {
+      setStatus('decode', 'WebCodecs VideoDecoder unsupported');
+      return;
+    }
+
+    /* eslint-disable no-new */
+    new MP4Demuxer(src, {
+      setStatus: setStatus,
+      onConfig: function (cfg) {
+        if (mySession !== session) return;
+        config = cfg;
+        window.test_result.codec = cfg.codec;
+        window.test_result.width = cfg.codedWidth;
+        window.test_result.height = cfg.codedHeight;
+        VideoDecoder.isConfigSupported(cfg).then(function (r) {
+          setStatus('decode', 'support=' + r.supported + '  ' + cfg.codec);
+        }).catch(function () {});
+      },
+      onChunk: function (chunk) {
+        if (mySession !== session) return;
+        var buf = new Uint8Array(chunk.byteLength);
+        chunk.copyTo(buf);
+        chunks.push({ type: chunk.type, timestamp: chunk.timestamp,
+                      duration: chunk.duration, data: buf });
+      },
+      onDone: function () {
+        if (mySession !== session) return;
+        setStatus('demux', 'Done (' + chunks.length + ' chunks)');
+        if (config) { startDecoder(mySession); }
+      }
+    });
+  }
+
+  // Build codec + size button groups.
+  CODECS.forEach(function (c, k) {
+    var b = document.createElement('button');
+    b.textContent = c.label;
+    b.onclick = function () { ci = k; load(); };
+    codecGroup.appendChild(b);
+  });
+  SIZES.forEach(function (s, k) {
+    var b = document.createElement('button');
+    b.textContent = s;
+    b.onclick = function () { si = k; load(); };
+    sizeGroup.appendChild(b);
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === '1' || e.key === '2') { ci = +e.key - 1; load(); }
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      si = (si + 1) % SIZES.length; load();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      si = (si - 1 + SIZES.length) % SIZES.length; load();
+    } else if (e.key.toLowerCase() === 'c') {
+      ci = (ci + 1) % CODECS.length; load();
+    }
+  });
+
+  // ?codec=av1|h264 & ?h=540|544|512 deep link.
+  function applyQuery() {
+    var q = new URLSearchParams(location.search);
+    var wantC = (q.get('codec') || '').toLowerCase();
+    var wantH = parseInt(q.get('h'), 10);
+    CODECS.forEach(function (c, k) { if (c.key === wantC) ci = k; });
+    SIZES.forEach(function (s, k) { if (s === wantH) si = k; });
+  }
+
+  window.addEventListener('load', function () { applyQuery(); load(); });
+})();
+</script>
+</body>
+</html>
