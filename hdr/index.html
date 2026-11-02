@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>HDR10 / HDR10+ Test Page</title>
+  <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #fff; font-family: sans-serif; color: #111; padding: 40px; }
+    h1 { font-size: 22px; margin-bottom: 8px; }
+    .subtitle { font-size: 13px; color: #666; margin-bottom: 28px; }
+
+    .codec-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+    .codec-tab {
+      padding: 7px 22px; border-radius: 6px; border: 1px solid #ccc;
+      cursor: pointer; font-size: 14px; font-weight: bold;
+      background: #f5f5f5; color: #555; transition: all 0.15s;
+    }
+    .codec-tab:hover { border-color: #999; color: #111; }
+    .codec-tab.active { background: #111; color: #fff; border-color: #111; }
+
+    .codec-panel { display: none; }
+    .codec-panel.active { display: block; }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tab {
+      padding: 6px 18px; border-radius: 6px; border: 1px solid #ccc;
+      cursor: pointer; font-size: 13px; background: #f5f5f5; color: #555;
+      transition: all 0.15s;
+    }
+    .tab:hover { border-color: #999; color: #111; }
+    .tab.active { background: #333; color: #fff; border-color: #333; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 24px; max-width: 900px; }
+    .card h2 { font-size: 18px; margin-bottom: 6px; }
+    .card .meta { font-size: 13px; color: #666; margin-bottom: 14px; }
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: bold;
+      padding: 2px 8px; border-radius: 4px; margin-bottom: 14px; margin-right: 6px;
+    }
+    .badge-mp4      { background: #f0f0f0; color: #333;    border: 1px solid #ccc; }
+    .badge-dash     { background: #e8f4ff; color: #0066cc; border: 1px solid #99ccff; }
+    .badge-hevc     { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+    .badge-av1      { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .badge-hdr10     { background: #f3e5f5; color: #6a1b9a; border: 1px solid #ce93d8; }
+    .badge-hdr10plus { background: #fce4ec; color: #880e4f; border: 1px solid #f48fb1; }
+
+    .video-wrap { background: #000; border-radius: 4px; }
+    .video-wrap video { width: 100%; border-radius: 4px; display: block; }
+    .error { color: #c00; font-size: 12px; margin-top: 10px; display: none; }
+  </style>
+</head>
+<body>
+  <h1>HDR10 / HDR10+ Playback Test</h1>
+  <p class="subtitle">HEVC · AV1 / MP4 · DASH</p>
+
+  <div class="codec-tabs">
+    <div class="codec-tab" data-codec="hevc">HEVC</div>
+    <div class="codec-tab" data-codec="av1">AV1</div>
+    <div class="codec-tab" onclick="location.reload()">&#8635; Reload</div>
+  </div>
+
+  <!-- HEVC -->
+  <div class="codec-panel" id="codec-hevc">
+    <div class="tabs">
+      <div class="tab" data-panel="hevc-hdr10-mp4">HDR10 · MP4</div>
+      <div class="tab" data-panel="hevc-hdr10plus-mp4">HDR10+ · MP4</div>
+      <div class="tab" data-panel="hevc-hdr10-dash">HDR10 · DASH</div>
+      <div class="tab" data-panel="hevc-hdr10plus-dash">HDR10+ · DASH</div>
+    </div>
+    <div class="panel" id="hevc-hdr10-mp4">
+      <div class="card">
+        <h2>HDR10</h2>
+        <span class="badge badge-hevc">HEVC</span><span class="badge badge-hdr10">HDR10</span><span class="badge badge-mp4">MP4 · &lt;video&gt;</span>
+        <p class="meta">HEVC 10bit · BT.2020 · PQ · Static Metadata (MDCV/CLLI)</p>
+        <div class="video-wrap"></div>
+        <p class="error">재생 불가: 브라우저가 HEVC를 지원하지 않습니다.</p>
+      </div>
+    </div>
+    <div class="panel" id="hevc-hdr10plus-mp4">
+      <div class="card">
+        <h2>HDR10+</h2>
+        <span class="badge badge-hevc">HEVC</span><span class="badge badge-hdr10plus">HDR10+</span><span class="badge badge-mp4">MP4 · &lt;video&gt;</span>
+        <p class="meta">HEVC 10bit · BT.2020 · PQ · Dynamic Metadata (SMPTE ST 2094-40)</p>
+        <div class="video-wrap"></div>
+        <p class="error">재생 불가: 브라우저가 HEVC를 지원하지 않습니다.</p>
+      </div>
+    </div>
+    <div class="panel" id="hevc-hdr10-dash">
+      <div class="card">
+        <h2>HDR10</h2>
+        <span class="badge badge-hevc">HEVC</span><span class="badge badge-hdr10">HDR10</span><span class="badge badge-dash">DASH · dash.js</span>
+        <p class="meta">HEVC 10bit · BT.2020 · PQ · Static Metadata (MDCV/CLLI)</p>
+        <div class="video-wrap"></div>
+        <p class="error"></p>
+      </div>
+    </div>
+    <div class="panel" id="hevc-hdr10plus-dash">
+      <div class="card">
+        <h2>HDR10+</h2>
+        <span class="badge badge-hevc">HEVC</span><span class="badge badge-hdr10plus">HDR10+</span><span class="badge badge-dash">DASH · dash.js</span>
+        <p class="meta">HEVC 10bit · BT.2020 · PQ · Dynamic Metadata (SMPTE ST 2094-40)</p>
+        <div class="video-wrap"></div>
+        <p class="error"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- AV1 -->
+  <div class="codec-panel" id="codec-av1">
+    <div class="tabs">
+      <div class="tab" data-panel="av1-hdr10-mp4">HDR10 · MP4</div>
+      <div class="tab" data-panel="av1-hdr10plus-mp4">HDR10+ · MP4</div>
+      <div class="tab" data-panel="av1-hdr10-dash">HDR10 · DASH</div>
+      <div class="tab" data-panel="av1-hdr10plus-dash">HDR10+ · DASH</div>
+    </div>
+    <div class="panel" id="av1-hdr10-mp4">
+      <div class="card">
+        <h2>HDR10</h2>
+        <span class="badge badge-av1">AV1</span><span class="badge badge-hdr10">HDR10</span><span class="badge badge-mp4">MP4 · &lt;video&gt;</span>
+        <p class="meta">AV1 10bit · BT.2020 · PQ · Static Metadata (MDCV/CLLI)</p>
+        <div class="video-wrap"></div>
+        <p class="error">재생 불가: 브라우저가 AV1을 지원하지 않습니다.</p>
+      </div>
+    </div>
+    <div class="panel" id="av1-hdr10plus-mp4">
+      <div class="card">
+        <h2>HDR10+</h2>
+        <span class="badge badge-av1">AV1</span><span class="badge badge-hdr10plus">HDR10+</span><span class="badge badge-mp4">MP4 · &lt;video&gt;</span>
+        <p class="meta">AV1 10bit · BT.2020 · PQ · Dynamic Metadata (ITU-T T.35 / SMPTE ST 2094-40)</p>
+        <div class="video-wrap"></div>
+        <p class="error">재생 불가: 브라우저가 AV1을 지원하지 않습니다.</p>
+      </div>
+    </div>
+    <div class="panel" id="av1-hdr10-dash">
+      <div class="card">
+        <h2>HDR10</h2>
+        <span class="badge badge-av1">AV1</span><span class="badge badge-hdr10">HDR10</span><span class="badge badge-dash">DASH · dash.js</span>
+        <p class="meta">AV1 10bit · BT.2020 · PQ · Static Metadata (MDCV/CLLI)</p>
+        <div class="video-wrap"></div>
+        <p class="error"></p>
+      </div>
+    </div>
+    <div class="panel" id="av1-hdr10plus-dash">
+      <div class="card">
+        <h2>HDR10+</h2>
+        <span class="badge badge-av1">AV1</span><span class="badge badge-hdr10plus">HDR10+</span><span class="badge badge-dash">DASH · dash.js</span>
+        <p class="meta">AV1 10bit · BT.2020 · PQ · Dynamic Metadata (ITU-T T.35 / SMPTE ST 2094-40)</p>
+        <div class="video-wrap"></div>
+        <p class="error"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MP4_SRCS = {
+      'hevc-hdr10-mp4':     'hevc/hdr10_sample.mp4',
+      'hevc-hdr10plus-mp4': 'hevc/hdr10plus_sample.mp4',
+      'av1-hdr10-mp4':      'av1/av1_hdr10_sample.mp4',
+      'av1-hdr10plus-mp4':  'av1/av1_hdr10plus_sample.mp4',
+    };
+
+    const DASH_SRCS = {
+      'hevc-hdr10-dash':     'hevc/dash_hdr10/manifest.mpd',
+      'hevc-hdr10plus-dash': 'hevc/dash_hdr10plus/manifest.mpd',
+      'av1-hdr10-dash':      'av1/dash_hdr10/manifest.mpd',
+      'av1-hdr10plus-dash':  'av1/dash_hdr10plus/manifest.mpd',
+    };
+
+    const dashPlayers = {};
+
+    function getWrap(panelId) {
+      return document.querySelector('#' + panelId + ' .video-wrap');
+    }
+
+    function getErrEl(panelId) {
+      return document.querySelector('#' + panelId + ' .error');
+    }
+
+    function mountMp4(panelId) {
+      const wrap = getWrap(panelId);
+      const video = document.createElement('video');
+      video.controls = true;
+      video.autoplay = true;
+      video.src = MP4_SRCS[panelId];
+      video.addEventListener('error', () => {
+        getErrEl(panelId).style.display = 'block';
+      }, { once: true });
+      wrap.appendChild(video);
+    }
+
+    function mountDash(panelId) {
+      const wrap = getWrap(panelId);
+      const video = document.createElement('video');
+      video.controls = true;
+      wrap.appendChild(video);
+
+      const player = dashjs.MediaPlayer().create();
+      player.initialize(video, DASH_SRCS[panelId], true);
+      player.on(dashjs.MediaPlayer.events.ERROR, e => {
+        const el = getErrEl(panelId);
+        el.textContent = 'DASH 오류: ' + (e.error?.message || JSON.stringify(e.error));
+        el.style.display = 'block';
+      });
+      dashPlayers[panelId] = player;
+    }
+
+    function unmount(panelId) {
+      if (dashPlayers[panelId]) {
+        dashPlayers[panelId].destroy();
+        dashPlayers[panelId] = null;
+      }
+      const wrap = getWrap(panelId);
+      wrap.innerHTML = '';
+      getErrEl(panelId).style.display = 'none';
+    }
+
+    // Codec tab
+    document.querySelectorAll('.codec-tab[data-codec]').forEach(ctab => {
+      ctab.addEventListener('click', () => {
+        const codec = ctab.dataset.codec;
+
+        document.querySelectorAll('.codec-panel.active').forEach(cp => {
+          cp.querySelectorAll('.panel.active').forEach(p => unmount(p.id));
+          cp.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+          cp.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        });
+
+        document.querySelectorAll('.codec-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.codec-panel').forEach(p => p.classList.remove('active'));
+        ctab.classList.add('active');
+        document.getElementById('codec-' + codec).classList.add('active');
+      });
+    });
+
+    // Content tab
+    document.querySelectorAll('.tab[data-panel]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const panelId = tab.dataset.panel;
+        const codecPanel = tab.closest('.codec-panel');
+
+        codecPanel.querySelectorAll('.panel.active').forEach(p => unmount(p.id));
+        codecPanel.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        codecPanel.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+        tab.classList.add('active');
+        document.getElementById(panelId).classList.add('active');
+
+        if (MP4_SRCS[panelId])  mountMp4(panelId);
+        if (DASH_SRCS[panelId]) mountDash(panelId);
+      });
+    });
+  </script>
+</body>
+</html>
