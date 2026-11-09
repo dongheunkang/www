@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>EME close test (once, PlayReady)</title>
+<style>
+    html { background: #fff; }
+    body { margin: 0; padding: 30px 60px; background: #fff; color: #000; font: 24px/1.4 monospace; height: 100vh; box-sizing: border-box; overflow: hidden; }
+    video { display: none; }
+    #summary { font-size: 36px; margin: 12px 0; }
+    #log { height: calc(100vh - 190px); overflow-y: auto; border: 2px solid #000; padding: 8px 12px; box-sizing: border-box; word-break: break-all; }
+    #log:focus { outline: 4px solid #0050ff; }
+    .bad { color: #c00000; }
+    .good { color: #008000; }
+</style>
+</head>
+<body>
+<div>EME close test (single round, PlayReady): only the browser EME API, no player, no stream.</div>
+<div id="summary">Running...</div>
+<div id="log" tabindex="0"></div>
+<video id="video" width="1" height="1"></video>
+<script>
+var WAIT_FOR_CLOSED_MS = 5000;
+
+var video = document.getElementById("video");
+var startTime = Date.now();
+var logBox = document.getElementById("log");
+logBox.focus();
+
+function log(text, cls) {
+    var line = document.createElement("div");
+    line.textContent = "+" + (Date.now() - startTime) + "ms  " + text;
+    if (cls) line.className = cls;
+    // Keep following the newest line unless the user has scrolled up
+    var atBottom = logBox.scrollTop + logBox.clientHeight >= logBox.scrollHeight - 40;
+    logBox.appendChild(line);
+    if (atBottom) logBox.scrollTop = logBox.scrollHeight;
+    console.log(text);
+}
+
+// Remote control: Up/Down scroll the log, Channel Up/Down (and PageUp/PageDown) scroll by a page
+document.addEventListener("keydown", function (e) {
+    var step = 80, page = logBox.clientHeight - 40;
+    var delta = { 38: -step, 40: step, 33: -page, 34: page, 427: -page, 428: page }[e.keyCode];
+    if (delta === undefined) return;
+    logBox.scrollTop += delta;
+    e.preventDefault();
+});
+
+function wait(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+}
+
+var KEY_SYSTEM = "com.microsoft.playready";
+
+function le(value, bytes) {
+    var out = [];
+    for (var i = 0; i < bytes; i++) out.push((value >> (8 * i)) & 0xff);
+    return out;
+}
+
+// PlayReady PSSH box with a dummy key ID (no licence needed)
+function testPssh() {
+    var systemId = [0x9a, 0x04, 0xf0, 0x79, 0x98, 0x40, 0x42, 0x86, 0xab, 0x92, 0xe6, 0x5b, 0xe0, 0x88, 0x5f, 0x95];
+    var kid = btoa(String.fromCharCode.apply(null, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]));
+    var xml = '<WRMHEADER xmlns="http://schemas.microsoft.com/DRM/2007/03/PlayReadyHeader" version="4.0.0.0">' +
+        '<DATA><PROTECTINFO><KEYLEN>16</KEYLEN><ALGID>AESCTR</ALGID></PROTECTINFO><KID>' + kid + '</KID></DATA></WRMHEADER>';
+    var xmlBytes = [];
+    for (var i = 0; i < xml.length; i++) xmlBytes.push(xml.charCodeAt(i), 0); // UTF-16LE
+    // PlayReady Object: total length, record count, one record (type 1 = rights management header)
+    var recordLength = xmlBytes.length;
+    var pro = le(10 + recordLength, 4).concat(le(1, 2), le(1, 2), le(recordLength, 2), xmlBytes);
+    var size = 32 + pro.length;
+    var box = [].concat([(size >>> 24) & 0xff, (size >>> 16) & 0xff, (size >>> 8) & 0xff, size & 0xff],
+        [0x70, 0x73, 0x73, 0x68, 0, 0, 0, 0], systemId,
+        [(pro.length >>> 24) & 0xff, (pro.length >>> 16) & 0xff, (pro.length >>> 8) & 0xff, pro.length & 0xff], pro);
+    return new Uint8Array(box);
+}
+
+// Run one async step and log its start, result and duration
+async function step(name, fn) {
+    var t = Date.now();
+    log(">> " + name + " ...");
+    try {
+        var result = await fn();
+        log("<< " + name + " OK (" + (Date.now() - t) + " ms)");
+        return result;
+    } catch (e) {
+        log("<< " + name + " FAILED (" + (Date.now() - t) + " ms): " + (e && e.name) + " " + (e && e.message), "bad");
+        throw e;
+    }
+}
+
+function sessionState(session) {
+    return "sessionId=" + JSON.stringify(session.sessionId) +
+        ", keyStatuses.size=" + session.keyStatuses.size +
+        ", expiration=" + session.expiration +
+        ", video.mediaKeys=" + (video.mediaKeys ? "set" : "null");
+}
+
+window.addEventListener("error", function (e) { log("window error: " + e.message, "bad"); });
+window.addEventListener("unhandledrejection", function (e) { log("unhandled rejection: " + e.reason, "bad"); });
+["encrypted", "waitingforkey", "error"].forEach(function (name) {
+    video.addEventListener(name, function () { log("video event: " + name); });
+});
+
+async function run() {
+    log(navigator.userAgent);
+
+    var access = await step('requestMediaKeySystemAccess("' + KEY_SYSTEM + '")', function () {
+        return navigator.requestMediaKeySystemAccess(KEY_SYSTEM, [{
+            initDataTypes: ["cenc"],
+            videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.4d401f"' }],
+            audioCapabilities: [{ contentType: 'audio/mp4; codecs="mp4a.40.2"' }],
+            sessionTypes: ["temporary"],
+        }]);
+    });
+    log("keySystem=" + access.keySystem + ", config=" + JSON.stringify(access.getConfiguration()));
+
+    var keys = await step("createMediaKeys()", function () { return access.createMediaKeys(); });
+    await step("video.setMediaKeys(keys)", function () { return video.setMediaKeys(keys); });
+
+    var session = keys.createSession("temporary");
+    log("createSession('temporary') done: " + sessionState(session));
+    session.addEventListener("message", function (e) { log("event: message (" + e.messageType + ", " + e.message.byteLength + " bytes)"); });
+    session.addEventListener("keystatuseschange", function () { log("event: keystatuseschange, size=" + session.keyStatuses.size); });
+
+    var closeStart = 0;
+    var closedAt = 0;
+    var closedReason = "";
+    session.closed.then(function (reason) {
+        closedAt = Date.now();
+        closedReason = reason;
+        log("session.closed RESOLVED, reason=" + reason + (closeStart ? " (" + (closedAt - closeStart) + " ms after close())" : " (before close())"), "good");
+    });
+
+    await step('generateRequest("cenc", pssh)', function () { return session.generateRequest("cenc", testPssh()); });
+    log("state: " + sessionState(session));
+    await wait(1000);
+
+    closeStart = Date.now();
+    await step("session.close()", function () { return session.close(); });
+    log("state after close(): " + sessionState(session) + ", closedResolved=" + !!closedAt);
+
+    // Poll the closed state while waiting, so the timing is visible on screen
+    log(">> waiting for session.closed (max " + WAIT_FOR_CLOSED_MS + " ms) ...");
+    var waited = 0;
+    while (!closedAt && waited < WAIT_FOR_CLOSED_MS) {
+        await wait(500);
+        waited += 500;
+        if (!closedAt) log("   waiting... " + waited + " ms, closedResolved=false");
+    }
+    log("<< wait finished, closedResolved=" + !!closedAt);
+
+    await step("video.setMediaKeys(null)", function () { return video.setMediaKeys(null); });
+    log("final state: " + sessionState(session) + ", closedResolved=" + !!closedAt);
+
+    var summary = document.getElementById("summary");
+    if (closedAt) {
+        summary.textContent = "session.closed resolved (" + (closedAt - closeStart) + " ms, reason: " + closedReason + ")";
+        summary.className = "good";
+    } else {
+        summary.textContent = "session.closed NOT resolved after " + WAIT_FOR_CLOSED_MS + " ms";
+        summary.className = "bad";
+    }
+    log(summary.textContent, summary.className);
+}
+
+run().catch(function (error) {
+    document.getElementById("summary").textContent = "Test error: " + error;
+    log("error: " + (error && error.name) + " " + (error && error.message), "bad");
+});
+</script>
+</body>
+</html>
